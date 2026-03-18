@@ -67,7 +67,7 @@ if __name__ == "__main__":
 #                               Positional
 # ---------------------------------------------------------------------
 
-    parser.add_argument("Book_id", type=int)
+    # parser.add_argument("Book_id", type=int)
 
 # ---------------------------------------------------------------------
 #                               NLP Tasks
@@ -88,18 +88,31 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.lexdiv:
-        dico = {}
-        with open("KenanPart", "r", encoding="utf-8") as f:
-            txt = f.read()
-        tokens = word_tokenize(txt)
-        tok = [t for t in tokens if t.isalpha()]
-        dico["tok"] = len(tok)
-        dico["typ"] = len(set(tok)) # Set() is same as .unique() in pandas
-        dico["hap"] = sum(1 for word in set(tok) if tok.count(word) == 1) # Allows you to keep only the words who appears only one time 
-        if dico["tok"]>0:
-            dico["ttr"] = dico["typ"] / dico["tok"] 
-            dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
-        if dico["typ"]>0:
-            dico["mwf"] = dico["tok"] / dico["typ"]     
-        print(dico)
-    GutenbergBook.GutenbergID(28)
+        GutenbergBook.GutenbergID(args.lexdiv)
+        os.makedirs("./cache/token", exist_ok=True)
+        token_info = os.path.join("./cache/token", f"book{args.lexdiv}.txt")
+        if os.path.exists(token_info):
+            with open(token_info,'r') as files:
+                for line in files:
+                    print(line)
+        else:
+            with open(f"./cache/book/book{args.lexdiv}.txt", "r", encoding="utf-8") as f:
+                txt = f.read()
+                dico = {}
+                tokens = word_tokenize(txt)
+                tok = [t for t in tokens if t.isalpha()]
+                dico["tok"] = len(tok)
+                dico["typ"] = len(set(tok)) # Set() is same as .unique() in pandas
+                dico["hap"] = sum(1 for word in set(tok) if tok.count(word) == 1) # Allows you to keep only the words who appears only one time 
+                if dico["tok"]>0:
+                    dico["ttr"] = dico["typ"] / dico["tok"] 
+                    dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
+                if dico["typ"]>0:
+                    dico["mwf"] = dico["tok"] / dico["typ"]  
+            with open(token_info,'w') as file:
+                file.write(str(dico))
+            print(dico)
+        
+        
+       
+    
