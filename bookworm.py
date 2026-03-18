@@ -8,7 +8,7 @@ from collections import Counter
 
 urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", "pg_catalog.csv") # Allows you to download a CSV via a link
 
-def main():
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="CLI argumets")
 
