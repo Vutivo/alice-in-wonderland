@@ -6,9 +6,9 @@ import urllib.error
 import nltk
 from nltk.tokenize import word_tokenize
 from collections import Counter
-import json
 
-urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", "pg_catalog.csv") # Allows you to download a CSV via a link
+if not os.path.exists("pg_catalog.csv"):
+    urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", "pg_catalog.csv") # Allows you to download a CSV via a link
 
 class GutenbergBook:
     def GutenbergID(id:int):  
@@ -68,8 +68,6 @@ if __name__ == "__main__":
 #                               Positional
 # ---------------------------------------------------------------------
 
-    # parser.add_argument("Book_id", type=int)
-
 # ---------------------------------------------------------------------
 #                               NLP Tasks
 # ---------------------------------------------------------------------
@@ -89,39 +87,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.lexdiv:
-
         GutenbergBook.GutenbergID(args.lexdiv)
-
-        os.makedirs("./cache/token", exist_ok=True)
-        token_info = os.path.join("./cache/token", f"book{args.lexdiv}.txt")
-        
-        if os.path.exists(token_info):
-            with open(token_info, 'r') as f:
-                dico = json.load(f)
-        else:
-            with open(f"./cache/book/book{args.lexdiv}.txt", "r", encoding="utf-8") as f:
-                txt = f.read()
-            
-            tokens = word_tokenize(txt)
-            tok = [t for t in tokens if t.isalpha()]
-            counts = Counter(tok)
-            
-            dico = {}
-            dico["tok"] = len(tok)
-            dico["typ"] = len(counts)
-            dico["hap"] = sum(1 for count in counts.values() if count == 1)
-            
-            if dico["tok"] > 0:
-                dico["ttr"] = dico["typ"] / dico["tok"]
-                dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
-            if dico["typ"] > 0:
-                dico["mwf"] = dico["tok"] / dico["typ"]
-            
-            with open(token_info, 'w') as f:
-                json.dump(dico, f)
-        
+        with open(f"./cache/book/book{args.lexdiv}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+        dico = {}
+        tokens = word_tokenize(txt)
+        tok = [t for t in tokens if t.isalpha()]
+        counts = Counter(tok)
+        dico["tok"] = len(tok)
+        dico["typ"] = len(counts) 
+        dico["hap"] = sum(1 for count in counts.values() if count == 1) # Allows you to keep only the words who appears only one time 
+        if dico["tok"]>0:
+            dico["ttr"] = dico["typ"] / dico["tok"] 
+            dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
+        if dico["typ"]>0:
+            dico["mwf"] = dico["tok"] / dico["typ"]     
         print(dico)
-        
-        
-       
-    
+
