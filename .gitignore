@@ -1,2 +1,4 @@
 pg_catalog.csv
 .venv
+venv/
+cache/
