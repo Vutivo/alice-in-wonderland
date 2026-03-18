@@ -3,7 +3,7 @@ import urllib.error
 import os
 
 class GutenbergBook:
-    def GutenbergID(int:id):  
+    def GutenbergID(id:int):  
         """
         Download a book from Project Gutenberg by its ID.
         Reuses the file if it already exists.
@@ -54,4 +54,4 @@ class GutenbergBook:
 
 
 if __name__ == "__main__":
-    GutenbergBook.GutenbergID(7)
+    GutenbergBook.GutenbergID(28)
