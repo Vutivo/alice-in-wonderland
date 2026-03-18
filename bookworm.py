@@ -3,7 +3,12 @@ import urllib.error
 import os
 
 class GutenbergBook:
-    def GutenbergID(id):
+    def GutenbergID(int:id):  
+        """
+        Download a book from Project Gutenberg by its ID.
+        Reuses the file if it already exists.
+        Cleans the book using GutenbergBook.CleanFile.
+        """
         url = f"https://www.gutenberg.org/cache/epub/{id}/pg{id}.txt"
         try:
             os.makedirs("./cache/book", exist_ok=True)
@@ -27,6 +32,11 @@ class GutenbergBook:
 
 
     def CleanFile(id ,file_path):
+        """
+        Remove the Project Gutenberg header and footer from a book file.
+        Keeps only the main text content.
+        Overwrites the original file with the cleaned text.
+        """
         line_file = []
         start_book = 0
         end_book = 0
@@ -44,4 +54,4 @@ class GutenbergBook:
 
 
 if __name__ == "__main__":
-    ...
+    GutenbergBook.GutenbergID(7)
