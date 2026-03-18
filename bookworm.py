@@ -1,15 +1,22 @@
 import urllib.request
 import urllib.error
+import os
 
 class GutenbergBook:
-    def GutenbergURL(id):
+    def GutenbergID(id):
         url = f"https://www.gutenberg.org/cache/epub/{id}/pg{id}.txt"
         try:
-            book_name =f"book{id}.txt" 
+            os.makedirs("./cache/book", exist_ok=True)
+            book_name = os.path.join("./cache/book", f"book{id}.txt")
+
+            if os.path.exists(book_name):
+                return book_name
+
             urllib.request.urlretrieve(url, book_name)
             print(f"Book {id} downloaded successfully.")
-
+            print("Cleaned in progress")
             GutenbergBook.CleanFile(id,book_name)
+            print("Clean finish")
 
 
         except urllib.error.URLError as e:
@@ -26,10 +33,8 @@ class GutenbergBook:
         with open(file_path,'r') as file:
             for index, line in enumerate(file):
                 if line.startswith("*** START OF THE PROJECT GUTENBERG EBOOK"):
-                   print(f"le livre commence à {index}")
                    start_book = index +1
                 if line.startswith("*** END OF THE PROJECT GUTENBERG EBOOK"):
-                    print(f"le livre se fini à {index}")
                     end_book = index
                 line_file.append(line)
             cleaned_lines = line_file[start_book:end_book]
@@ -40,4 +45,3 @@ class GutenbergBook:
 
 if __name__ == "__main__":
     ...
-  
