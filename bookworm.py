@@ -7,6 +7,9 @@ import nltk
 from nltk.tokenize import word_tokenize
 from collections import Counter
 import re 
+import spacy
+import warnings
+warnings.filterwarnings("ignore")
 
 
 if not os.path.exists("pg_catalog.csv"):
@@ -128,4 +131,23 @@ if __name__ == "__main__":
 
 
     if args.entities:
-        ...
+        
+        GutenbergBook.GutenbergID(args.entities)
+        with open(f"./cache/book/book{args.entities}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+
+        nlp = spacy.load("en_core_web_trf")
+        doc = nlp(txt)
+        dico = {}
+        persons = []
+        locations = []
+        
+        for ent in doc.ents:
+            if ent.label_ == "PERSON" and ent.text not in persons:
+                persons.append(ent.text)
+            elif ent.label_ in ("GPE", "LOC") and ent.text not in locations:
+                locations.append(ent.text)
+
+        dico["characters"] = persons
+        dico["locations"] = locations
+        print (dico)
