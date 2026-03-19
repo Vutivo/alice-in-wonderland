@@ -70,18 +70,23 @@ class Book:
                                  "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"]
  
         freq_word = {}
-        sentence_point = {}
         for sentence in cleaned_sentences:
             for word in sentence.lower().split():
                 if word not in stop_words:
                     freq_word[word] = freq_word.get(word, 0) + 1
-        
 
+        sentence_point = {}
         for sentence in cleaned_sentences:
             for word in sentence.lower().split():
                 if word in freq_word:
                     sentence_point[sentence] = sentence_point.get(sentence, 0) + freq_word[word]
-        print(max(sentence_point,key=sentence_point.get))
+
+        sorted_sentences = sorted(sentence_point.items(), key=lambda x: x[1], reverse=True)
+        best_sentences = []
+        for i in range(n):
+            best_sentences.append(sorted_sentences[i][0])
+
+        return best_sentences
 
 
         
@@ -148,6 +153,3 @@ if __name__ == "__main__":
                 continue
             cleaned_sentences.append(element)
         
-        for index, element in enumerate(cleaned_sentences):
-            print(index,':',element)
-        # Book.summarizer(cleaned_sentences)
