@@ -6,6 +6,7 @@ import urllib.error
 import nltk
 from nltk.tokenize import word_tokenize
 from collections import Counter
+import re
 
 if not os.path.exists("pg_catalog.csv"):
     urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", "pg_catalog.csv") # Allows you to download a CSV via a link
@@ -26,10 +27,7 @@ class GutenbergBook:
                 return book_name
 
             urllib.request.urlretrieve(url, book_name)
-            print(f"Book {id} downloaded successfully.")
-            print("Cleaned in progress")
             GutenbergBook.CleanFile(id,book_name)
-            print("Clean finish")
 
 
         except urllib.error.URLError as e:
@@ -59,6 +57,7 @@ class GutenbergBook:
         with open(file_path,'w') as file:
            for line in cleaned_lines:
                file.write(line)
+
 
 
 if __name__ == "__main__":
@@ -104,3 +103,24 @@ if __name__ == "__main__":
             dico["mwf"] = dico["tok"] / dico["typ"]     
         print(dico)
 
+    if args.summarize:
+        file_path = f"./cache/book/book{args.summarize}.txt"
+        if not os.path.exists(file_path):
+            GutenbergBook.GutenbergID(args.summarize)
+        with open (file_path,'r') as f:
+            text = f.read()
+            sentences = re.split(r'(?<=[.!?])\s+|\.{3}\s+', text)
+            
+        cleaned_sentences = []
+        for element in sentences:
+            element.strip()
+
+            element = element.replace("[Illustration]", "").strip()
+            
+
+            if re.match(r'^CHAPTER\s+[IVX]+\.$', element):
+                continue
+            cleaned_sentences.append(element)
+        
+        for index, element in enumerate(cleaned_sentences):
+            print(index,':',element)
