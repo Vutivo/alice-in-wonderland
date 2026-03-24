@@ -74,7 +74,7 @@ class Book:
 
         for sentence in cleaned_sentences:
             words = sentence.split()
-            if 5 < len(words) < 40:
+            if 5 < len(words) < 25 and not (sentence.strip().startswith('"') or sentence.strip().startswith("'") or sentence.strip().startswith("“")):
                 filtered_sentences.append(sentence)
 
         if len(filtered_sentences) == 0:
@@ -85,7 +85,7 @@ class Book:
 
         scores = []
         for i in range(X.shape[0]):
-            score = X[i].sum()
+            score = X[i].mean()
             scores.append(score)
         scores = np.array(scores).flatten()
 
