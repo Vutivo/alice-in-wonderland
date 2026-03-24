@@ -69,10 +69,13 @@ class GutenbergBook:
 
 class Book:
     def summarizer(cleaned_sentences, n=3):
-        filtered_sentences = [
-            s for s in cleaned_sentences 
-            if 5 < len(s.split()) < 40
-        ]
+
+        filtered_sentences = []
+        
+        for sentence in cleaned_sentences:
+            words = sentence.split()
+            if 5 < len(words) < 40:
+                filtered_sentences.append(sentence)
 
         if len(filtered_sentences) == 0:
             return []
@@ -80,22 +83,35 @@ class Book:
         vectorizer = TfidfVectorizer(stop_words="english")
         X = vectorizer.fit_transform(filtered_sentences)
 
-        scores = np.array(X.sum(axis=1)).flatten()
+        scores = []
+        for i in range(X.shape[0]):
+            score = X[i].sum()
+            scores.append(score)
+        scores = np.array(scores).flatten()
 
         sim_matrix = cosine_similarity(X)
+
         selected = []
-        ranked_indices = scores.argsort()[::-1]
+        ranked_indices = scores.argsort()[::-1]  
 
         for idx in ranked_indices:
             if len(selected) >= n:
                 break
 
-            if all(sim_matrix[idx][i] < 0.7 for i in selected):
+            too_similar = False
+            for i in selected:
+                if sim_matrix[idx][i] >= 0.7:
+                    too_similar = True
+                    break
+
+            if not too_similar:
                 selected.append(idx)
 
-        selected = sorted(selected)
+        selected.sort()
 
-        summary = [filtered_sentences[i] for i in selected]
+        summary = []
+        for i in selected:
+            summary.append(filtered_sentences[i])
 
         return summary
 
