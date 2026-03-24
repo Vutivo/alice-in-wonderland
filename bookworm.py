@@ -172,7 +172,24 @@ class Book:
             print(results)
         except ValueError:
             raise ValueError(f"Book ID {args.similar} is not in the collection.")
-        
+    def lexdiv(id):
+        GutenbergBook.GutenbergID(id)
+        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+        dico = {}
+        tokens = word_tokenize(txt)
+        tok = [t for t in tokens if t.isalpha()]
+        counts = Counter(tok)
+        dico["tok"] = len(tok)
+        dico["typ"] = len(counts) 
+        dico["hap"] = sum(1 for count in counts.values() if count == 1) # Allows you to keep only the words who appears only one time 
+        if dico["tok"]>0:
+            dico["ttr"] = dico["typ"] / dico["tok"] 
+            dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
+        if dico["typ"]>0:
+            dico["mwf"] = dico["tok"] / dico["typ"]
+        return dico
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CLI argumets")
@@ -200,22 +217,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.lexdiv:
-        GutenbergBook.GutenbergID(args.lexdiv)
-        with open(f"./cache/book/book{args.lexdiv}.txt", "r", encoding="utf-8") as f:
-            txt = f.read()
-        dico = {}
-        tokens = word_tokenize(txt)
-        tok = [t for t in tokens if t.isalpha()]
-        counts = Counter(tok)
-        dico["tok"] = len(tok)
-        dico["typ"] = len(counts) 
-        dico["hap"] = sum(1 for count in counts.values() if count == 1) # Allows you to keep only the words who appears only one time 
-        if dico["tok"]>0:
-            dico["ttr"] = dico["typ"] / dico["tok"] 
-            dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
-        if dico["typ"]>0:
-            dico["mwf"] = dico["tok"] / dico["typ"]     
-        print(dico)
+        result = Book.lexdiv(args.lexdiv)
+        print(result)
 
     if args.summarize:
         
