@@ -228,10 +228,22 @@ if __name__ == "__main__":
         print (dico)
 
     if args.similar:
-                list_id = [11,12,16,55,113,120,236,108,834,863,1661,61262,69087,35,36,84,159,164,345,68283]
-                file_path = f"./cache/book/"
-                for element in list_id:
-                    file = f"book{element}.txt"
-                    final_file = file_path + file
-                    if not os.path.exists(final_file):
-                        GutenbergBook.GutenbergID(element)
+        list_id = [11,12,16,55,113,120,236,108,834,863,1661,61262,69087,35,36,84,159,164,345,68283]
+        list_book = []
+        file_path = f"./cache/book/"
+        for element in list_id:
+            file = f"book{element}.txt"
+            final_file = file_path + file
+            if not os.path.exists(final_file):
+                GutenbergBook.GutenbergID(element)
+            
+            with open(final_file, 'r') as f:
+                list_book.append(f.read())
+        
+        vectorizer = TfidfVectorizer(stop_words="english")
+        X = vectorizer.fit_transform(list_book)
+
+        try:
+            target_index = list_id.index(int(args.similar))
+        except ValueError:
+            raise ValueError(f"Book ID {args.similar} is not in the collection.")
