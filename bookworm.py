@@ -201,6 +201,26 @@ class Book:
             counts = Counter(section)
             dico[i+1] = [word for word in counts.most_common(10)]
         return dico
+    def entities(id):
+        GutenbergBook.GutenbergID(id)
+        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+
+        nlp = spacy.load("en_core_web_trf")
+        doc = nlp(txt)
+        dico = {}
+        persons = []
+        locations = []
+        
+        for ent in doc.ents:
+            if ent.label_ == "PERSON" and ent.text not in persons:
+                persons.append(ent.text)
+            elif ent.label_ in ("GPE", "LOC") and ent.text not in locations:
+                locations.append(ent.text)
+
+        dico["characters"] = persons
+        dico["locations"] = locations
+        return dico
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CLI argumets")
@@ -232,40 +252,18 @@ if __name__ == "__main__":
         print(result)
 
     if args.summarize:
-        
         resume = Book.summarizer(args.summarize, n=3)
         for sentence in resume:
             print(sentence)
 
-    
+
     if args.topics:
         result = Book.topics(args.topics)
         print(result)
 
-    
-
-
     if args.entities:
-        
-        GutenbergBook.GutenbergID(args.entities)
-        with open(f"./cache/book/book{args.entities}.txt", "r", encoding="utf-8") as f:
-            txt = f.read()
-
-        nlp = spacy.load("en_core_web_trf")
-        doc = nlp(txt)
-        dico = {}
-        persons = []
-        locations = []
-        
-        for ent in doc.ents:
-            if ent.label_ == "PERSON" and ent.text not in persons:
-                persons.append(ent.text)
-            elif ent.label_ in ("GPE", "LOC") and ent.text not in locations:
-                locations.append(ent.text)
-
-        dico["characters"] = persons
-        dico["locations"] = locations
-        print (dico)
+        result = Book.entities(args.entities)
+        print(result)
 
     if args.similar:
         result = Book.similar(args.similar)
