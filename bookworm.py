@@ -230,6 +230,7 @@ if __name__ == "__main__":
     if args.similar:
         list_id = [11,12,16,55,113,120,236,108,834,863,1661,61262,69087,35,36,84,159,164,345,68283]
         list_book = []
+        list_titles = []
         file_path = f"./cache/book/"
         for element in list_id:
             file = f"book{element}.txt"
@@ -239,11 +240,28 @@ if __name__ == "__main__":
             
             with open(final_file, 'r') as f:
                 list_book.append(f.read())
+            
+            df = pd.read_csv("pg_catalog.csv")
+            title = df[df["Text#"] == element]["Title"].values[0]
+            list_titles.append(title)
+
         
+
         vectorizer = TfidfVectorizer(stop_words="english")
         X = vectorizer.fit_transform(list_book)
 
         try:
             target_index = list_id.index(int(args.similar))
+
+            similarities = cosine_similarity(X[target_index], X).flatten()
+            ranked = similarities.argsort()[::-1]
+            results = []
+            for element in ranked:
+                if element != target_index:
+                    results.append(list_titles[element])
+                if len(results) == 5:
+                    break
+                
+            print(results)
         except ValueError:
             raise ValueError(f"Book ID {args.similar} is not in the collection.")
