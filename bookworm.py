@@ -21,7 +21,7 @@ if not os.path.exists("pg_catalog.csv"):
     urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", "pg_catalog.csv") # Allows you to download a CSV via a link
 
 class GutenbergBook:
-    def GutenbergID(id:int):  
+    def GutenbergID(id:int):
         """
         Download a book from Project Gutenberg by its ID.
         Reuses the file if it already exists.
@@ -44,8 +44,6 @@ class GutenbergBook:
 
         except urllib.error.HTTPError as e:
             print(f"Failed to download book: {e}")
-
-
     def CleanFile(id ,file_path):
         """
         Remove the Project Gutenberg header and footer from a book file.
@@ -68,7 +66,27 @@ class GutenbergBook:
                file.write(line)
 
 class Book:
-    def summarizer(cleaned_sentences, n=3):
+    def summarizer(id, n=3):
+
+        file_path = f"./cache/book/book{id}.txt"
+
+        if not os.path.exists(file_path):
+            GutenbergBook.GutenbergID(args.summarize)
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            text = f.read()
+
+        sentences = re.split(r'(?<=[.!?])\s+|\.{3}\s*', text)
+
+        cleaned_sentences = []
+
+        for sentence in sentences:
+            sentence = sentence.replace("[Illustration]", "").strip()
+            if not sentence:
+                continue
+            if not re.search(r'[.!?]$', sentence):
+                continue
+            cleaned_sentences.append(sentence)
 
         filtered_sentences = []
 
@@ -114,121 +132,8 @@ class Book:
             summary.append(filtered_sentences[i])
 
         return summary
-
-        
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="CLI argumets")
-
-# ---------------------------------------------------------------------
-#                               Positional
-# ---------------------------------------------------------------------
-
-# ---------------------------------------------------------------------
-#                               NLP Tasks
-# ---------------------------------------------------------------------
-
-    group = parser.add_mutually_exclusive_group(required=True) # Avoids to put 2 flags in same time 
-    group.add_argument("--lexdiv", type=int) 
-    group.add_argument("--entities", type=int)
-    group.add_argument("--summarize", type=int)
-    group.add_argument("--topics", type= int)
-    group.add_argument("--similar", type=int)
-    group.add_argument("--card", type=int)
-
-# ---------------------------------------------------------------------
-#                           NPL Definitions
-# ---------------------------------------------------------------------
-
-    args = parser.parse_args()
-
-    if args.lexdiv:
-        GutenbergBook.GutenbergID(args.lexdiv)
-        with open(f"./cache/book/book{args.lexdiv}.txt", "r", encoding="utf-8") as f:
-            txt = f.read()
-        dico = {}
-        tokens = word_tokenize(txt)
-        tok = [t for t in tokens if t.isalpha()]
-        counts = Counter(tok)
-        dico["tok"] = len(tok)
-        dico["typ"] = len(counts) 
-        dico["hap"] = sum(1 for count in counts.values() if count == 1) # Allows you to keep only the words who appears only one time 
-        if dico["tok"]>0:
-            dico["ttr"] = dico["typ"] / dico["tok"] 
-            dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
-        if dico["typ"]>0:
-            dico["mwf"] = dico["tok"] / dico["typ"]     
-        print(dico)
-
-    if args.summarize:
-        file_path = f"./cache/book/book{args.summarize}.txt"
-
-        if not os.path.exists(file_path):
-            GutenbergBook.GutenbergID(args.summarize)
-
-        with open(file_path, 'r', encoding='utf-8') as f:
-            text = f.read()
-
-        sentences = re.split(r'(?<=[.!?])\s+|\.{3}\s*', text)
-
-        cleaned_sentences = []
-
-        for sentence in sentences:
-            sentence = sentence.replace("[Illustration]", "").strip()
-            if not sentence:
-                continue
-            if not re.search(r'[.!?]$', sentence):
-                continue
-            cleaned_sentences.append(sentence)
-
-        resume = Book.summarizer(cleaned_sentences, n=3)
-        for sentence in resume:
-            print(sentence)
-
-    
-    if args.topics:
-        
-        GutenbergBook.GutenbergID(args.topics)
-        with open(f"./cache/book/book{args.topics}.txt", "r", encoding="utf-8") as f:
-            txt = f.read()
-        dico={}
-        mots = [t for t in txt.split() if t.isalpha()]
-        nb_sections = max(1, len(mots) // 1000)
-
-        size = len(mots) // nb_sections
-        for i in range(nb_sections):
-            section = mots[i*size:(i+1)*size]
-            counts = Counter(section)
-            dico[i+1] = [word for word in counts.most_common(10)]
-        print(dico)
-
-    
-
-
-    if args.entities:
-        
-        GutenbergBook.GutenbergID(args.entities)
-        with open(f"./cache/book/book{args.entities}.txt", "r", encoding="utf-8") as f:
-            txt = f.read()
-
-        nlp = spacy.load("en_core_web_trf")
-        doc = nlp(txt)
-        dico = {}
-        persons = []
-        locations = []
-        
-        for ent in doc.ents:
-            if ent.label_ == "PERSON" and ent.text not in persons:
-                persons.append(ent.text)
-            elif ent.label_ in ("GPE", "LOC") and ent.text not in locations:
-                locations.append(ent.text)
-
-        dico["characters"] = persons
-        dico["locations"] = locations
-        print (dico)
-
-    if args.similar:
-        list_id = [11,12,16,55,113,120,236,108,834,863,1661,61262,69087,35,36,84,159,164,345,68283]
+    def similar(id):
+        list_id = [11,12,16,35,36,55,84,108,113,120,159,164,236,345,834,863,1661,61262,68283,69087,70114]
         list_book = []
         list_titles = []
         file_path = f"./cache/book/"
@@ -262,6 +167,104 @@ if __name__ == "__main__":
                 if len(results) == 5:
                     break
                 
-            print(results)
+            return result
         except ValueError:
             raise ValueError(f"Book ID {args.similar} is not in the collection.")
+    def lexdiv(id):
+        GutenbergBook.GutenbergID(id)
+        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+        dico = {}
+        tokens = word_tokenize(txt)
+        tok = [t for t in tokens if t.isalpha()]
+        counts = Counter(tok)
+        dico["tok"] = len(tok)
+        dico["typ"] = len(counts) 
+        dico["hap"] = sum(1 for count in counts.values() if count == 1) # Allows you to keep only the words who appears only one time 
+        if dico["tok"]>0:
+            dico["ttr"] = dico["typ"] / dico["tok"] 
+            dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
+        if dico["typ"]>0:
+            dico["mwf"] = dico["tok"] / dico["typ"]
+        return dico
+    def topics(id):
+        GutenbergBook.GutenbergID(id)
+        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+        dico={}
+        mots = [t for t in txt.split() if t.isalpha()]
+        nb_sections = max(1, len(mots) // 1000)
+
+        size = len(mots) // nb_sections
+        for i in range(nb_sections):
+            section = mots[i*size:(i+1)*size]
+            counts = Counter(section)
+            dico[i+1] = [word for word in counts.most_common(10)]
+        return dico
+    def entities(id):
+        GutenbergBook.GutenbergID(id)
+        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+
+        nlp = spacy.load("en_core_web_trf")
+        doc = nlp(txt)
+        dico = {}
+        persons = []
+        locations = []
+        
+        for ent in doc.ents:
+            if ent.label_ == "PERSON" and ent.text not in persons:
+                persons.append(ent.text)
+            elif ent.label_ in ("GPE", "LOC") and ent.text not in locations:
+                locations.append(ent.text)
+
+        dico["characters"] = persons
+        dico["locations"] = locations
+        return dico
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="CLI argumets")
+
+# ---------------------------------------------------------------------
+#                               Positional
+# ---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
+#                               NLP Tasks
+# ---------------------------------------------------------------------
+
+    group = parser.add_mutually_exclusive_group(required=True) # Avoids to put 2 flags in same time 
+    group.add_argument("--lexdiv", type=int) 
+    group.add_argument("--entities", type=int)
+    group.add_argument("--summarize", type=int)
+    group.add_argument("--topics", type= int)
+    group.add_argument("--similar", type=int)
+    group.add_argument("--card", type=int)
+
+# ---------------------------------------------------------------------
+#                           NPL Definitions
+# ---------------------------------------------------------------------
+
+    args = parser.parse_args()
+
+    if args.lexdiv:
+        result = Book.lexdiv(args.lexdiv)
+        print(result)
+
+    if args.summarize:
+        resume = Book.summarizer(args.summarize, n=3)
+        for sentence in resume:
+            print(sentence)
+
+
+    if args.topics:
+        result = Book.topics(args.topics)
+        print(result)
+
+    if args.entities:
+        result = Book.entities(args.entities)
+        print(result)
+
+    if args.similar:
+        result = Book.similar(args.similar)
+        print(result)
