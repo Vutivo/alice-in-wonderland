@@ -71,10 +71,10 @@ class Book:
     def summarizer(cleaned_sentences, n=3):
 
         filtered_sentences = []
-        
+
         for sentence in cleaned_sentences:
             words = sentence.split()
-            if 5 < len(words) < 40:
+            if 5 < len(words) < 25 and not (sentence.strip().startswith('"') or sentence.strip().startswith("'") or sentence.strip().startswith("“")):
                 filtered_sentences.append(sentence)
 
         if len(filtered_sentences) == 0:
@@ -85,7 +85,7 @@ class Book:
 
         scores = []
         for i in range(X.shape[0]):
-            score = X[i].sum()
+            score = X[i].mean()
             scores.append(score)
         scores = np.array(scores).flatten()
 
@@ -226,3 +226,42 @@ if __name__ == "__main__":
         dico["characters"] = persons
         dico["locations"] = locations
         print (dico)
+
+    if args.similar:
+        list_id = [11,12,16,55,113,120,236,108,834,863,1661,61262,69087,35,36,84,159,164,345,68283]
+        list_book = []
+        list_titles = []
+        file_path = f"./cache/book/"
+        for element in list_id:
+            file = f"book{element}.txt"
+            final_file = file_path + file
+            if not os.path.exists(final_file):
+                GutenbergBook.GutenbergID(element)
+            
+            with open(final_file, 'r') as f:
+                list_book.append(f.read())
+            
+            df = pd.read_csv("pg_catalog.csv")
+            title = df[df["Text#"] == element]["Title"].values[0]
+            list_titles.append(title)
+
+        
+
+        vectorizer = TfidfVectorizer(stop_words="english")
+        X = vectorizer.fit_transform(list_book)
+
+        try:
+            target_index = list_id.index(int(args.similar))
+
+            similarities = cosine_similarity(X[target_index], X).flatten()
+            ranked = similarities.argsort()[::-1]
+            results = []
+            for element in ranked:
+                if element != target_index:
+                    results.append(list_titles[element])
+                if len(results) == 5:
+                    break
+                
+            print(results)
+        except ValueError:
+            raise ValueError(f"Book ID {args.similar} is not in the collection.")
