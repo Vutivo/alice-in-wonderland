@@ -21,7 +21,7 @@ if not os.path.exists("pg_catalog.csv"):
     urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", "pg_catalog.csv") # Allows you to download a CSV via a link
 
 class GutenbergBook:
-    def GutenbergID(id:int):  
+    def GutenbergID(id:int):
         """
         Download a book from Project Gutenberg by its ID.
         Reuses the file if it already exists.
@@ -44,8 +44,6 @@ class GutenbergBook:
 
         except urllib.error.HTTPError as e:
             print(f"Failed to download book: {e}")
-
-
     def CleanFile(id ,file_path):
         """
         Remove the Project Gutenberg header and footer from a book file.
@@ -169,7 +167,7 @@ class Book:
                 if len(results) == 5:
                     break
                 
-            print(results)
+            return result
         except ValueError:
             raise ValueError(f"Book ID {args.similar} is not in the collection.")
     def lexdiv(id):
@@ -189,7 +187,20 @@ class Book:
         if dico["typ"]>0:
             dico["mwf"] = dico["tok"] / dico["typ"]
         return dico
+    def topics(id):
+        GutenbergBook.GutenbergID(id)
+        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+        dico={}
+        mots = [t for t in txt.split() if t.isalpha()]
+        nb_sections = max(1, len(mots) // 1000)
 
+        size = len(mots) // nb_sections
+        for i in range(nb_sections):
+            section = mots[i*size:(i+1)*size]
+            counts = Counter(section)
+            dico[i+1] = [word for word in counts.most_common(10)]
+        return dico
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CLI argumets")
@@ -228,20 +239,8 @@ if __name__ == "__main__":
 
     
     if args.topics:
-        
-        GutenbergBook.GutenbergID(args.topics)
-        with open(f"./cache/book/book{args.topics}.txt", "r", encoding="utf-8") as f:
-            txt = f.read()
-        dico={}
-        mots = [t for t in txt.split() if t.isalpha()]
-        nb_sections = max(1, len(mots) // 1000)
-
-        size = len(mots) // nb_sections
-        for i in range(nb_sections):
-            section = mots[i*size:(i+1)*size]
-            counts = Counter(section)
-            dico[i+1] = [word for word in counts.most_common(10)]
-        print(dico)
+        result = Book.topics(args.topics)
+        print(result)
 
     
 
