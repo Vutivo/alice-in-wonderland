@@ -4,11 +4,16 @@ import os
 import urllib.request
 import urllib.error
 import nltk
-from nltk.tokenize import word_tokenize
-from collections import Counter
-import re 
+import numpy as np
+import re
 import spacy
 import warnings
+from nltk.tokenize import word_tokenize
+from collections import Counter
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+
 warnings.filterwarnings("ignore")
 
 
@@ -31,10 +36,7 @@ class GutenbergBook:
                 return book_name
 
             urllib.request.urlretrieve(url, book_name)
-            print(f"Book {id} downloaded successfully.")
-            print("Cleaned in progress")
             GutenbergBook.CleanFile(id,book_name)
-            print("Clean finish")
 
 
         except urllib.error.URLError as e:
@@ -65,6 +67,39 @@ class GutenbergBook:
            for line in cleaned_lines:
                file.write(line)
 
+class Book:
+    def summarizer(cleaned_sentences, n=3):
+        filtered_sentences = [
+            s for s in cleaned_sentences 
+            if 5 < len(s.split()) < 40
+        ]
+
+        if len(filtered_sentences) == 0:
+            return []
+
+        vectorizer = TfidfVectorizer(stop_words="english")
+        X = vectorizer.fit_transform(filtered_sentences)
+
+        scores = np.array(X.sum(axis=1)).flatten()
+
+        sim_matrix = cosine_similarity(X)
+        selected = []
+        ranked_indices = scores.argsort()[::-1]
+
+        for idx in ranked_indices:
+            if len(selected) >= n:
+                break
+
+            if all(sim_matrix[idx][i] < 0.7 for i in selected):
+                selected.append(idx)
+
+        selected = sorted(selected)
+
+        summary = [filtered_sentences[i] for i in selected]
+
+        return summary
+
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CLI argumets")
@@ -109,6 +144,30 @@ if __name__ == "__main__":
             dico["mwf"] = dico["tok"] / dico["typ"]     
         print(dico)
 
+    if args.summarize:
+        file_path = f"./cache/book/book{args.summarize}.txt"
+
+        if not os.path.exists(file_path):
+            GutenbergBook.GutenbergID(args.summarize)
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            text = f.read()
+
+        sentences = re.split(r'(?<=[.!?])\s+|\.{3}\s*', text)
+
+        cleaned_sentences = []
+
+        for sentence in sentences:
+            sentence = sentence.replace("[Illustration]", "").strip()
+            if not sentence:
+                continue
+            if not re.search(r'[.!?]$', sentence):
+                continue
+            cleaned_sentences.append(sentence)
+
+        resume = Book.summarizer(cleaned_sentences, n=3)
+        for sentence in resume:
+            print(sentence)
 
     
     if args.topics:
