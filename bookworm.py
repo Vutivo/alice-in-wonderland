@@ -71,7 +71,7 @@ class Book:
     def summarizer(cleaned_sentences, n=3):
 
         filtered_sentences = []
-        
+
         for sentence in cleaned_sentences:
             words = sentence.split()
             if 5 < len(words) < 40:
@@ -226,3 +226,12 @@ if __name__ == "__main__":
         dico["characters"] = persons
         dico["locations"] = locations
         print (dico)
+
+    if args.similar:
+                list_id = [11,12,16,55,113,120,236,108,834,863,1661,61262,69087,35,36,84,159,164,345,68283]
+                file_path = f"./cache/book/"
+                for element in list_id:
+                    file = f"book{element}.txt"
+                    final_file = file_path + file
+                    if not os.path.exists(final_file):
+                        GutenbergBook.GutenbergID(element)
