@@ -6,10 +6,15 @@ import urllib.error
 import nltk
 import numpy as np
 import re
+import spacy
+import warnings
 from nltk.tokenize import word_tokenize
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+
+warnings.filterwarnings("ignore")
 
 
 if not os.path.exists("pg_catalog.csv"):
@@ -163,3 +168,45 @@ if __name__ == "__main__":
         resume = Book.summarizer(cleaned_sentences, n=3)
         for sentence in resume:
             print(sentence)
+
+    
+    if args.topics:
+        
+        GutenbergBook.GutenbergID(args.topics)
+        with open(f"./cache/book/book{args.topics}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+        dico={}
+        mots = [t for t in txt.split() if t.isalpha()]
+        nb_sections = max(1, len(mots) // 1000)
+
+        size = len(mots) // nb_sections
+        for i in range(nb_sections):
+            section = mots[i*size:(i+1)*size]
+            counts = Counter(section)
+            dico[i+1] = [word for word in counts.most_common(10)]
+        print(dico)
+
+    
+
+
+    if args.entities:
+        
+        GutenbergBook.GutenbergID(args.entities)
+        with open(f"./cache/book/book{args.entities}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+
+        nlp = spacy.load("en_core_web_trf")
+        doc = nlp(txt)
+        dico = {}
+        persons = []
+        locations = []
+        
+        for ent in doc.ents:
+            if ent.label_ == "PERSON" and ent.text not in persons:
+                persons.append(ent.text)
+            elif ent.label_ in ("GPE", "LOC") and ent.text not in locations:
+                locations.append(ent.text)
+
+        dico["characters"] = persons
+        dico["locations"] = locations
+        print (dico)
