@@ -68,7 +68,27 @@ class GutenbergBook:
                file.write(line)
 
 class Book:
-    def summarizer(cleaned_sentences, n=3):
+    def summarizer(id, n=3):
+
+        file_path = f"./cache/book/book{id}.txt"
+
+        if not os.path.exists(file_path):
+            GutenbergBook.GutenbergID(args.summarize)
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            text = f.read()
+
+        sentences = re.split(r'(?<=[.!?])\s+|\.{3}\s*', text)
+
+        cleaned_sentences = []
+
+        for sentence in sentences:
+            sentence = sentence.replace("[Illustration]", "").strip()
+            if not sentence:
+                continue
+            if not re.search(r'[.!?]$', sentence):
+                continue
+            cleaned_sentences.append(sentence)
 
         filtered_sentences = []
 
@@ -161,27 +181,8 @@ if __name__ == "__main__":
         print(dico)
 
     if args.summarize:
-        file_path = f"./cache/book/book{args.summarize}.txt"
-
-        if not os.path.exists(file_path):
-            GutenbergBook.GutenbergID(args.summarize)
-
-        with open(file_path, 'r', encoding='utf-8') as f:
-            text = f.read()
-
-        sentences = re.split(r'(?<=[.!?])\s+|\.{3}\s*', text)
-
-        cleaned_sentences = []
-
-        for sentence in sentences:
-            sentence = sentence.replace("[Illustration]", "").strip()
-            if not sentence:
-                continue
-            if not re.search(r'[.!?]$', sentence):
-                continue
-            cleaned_sentences.append(sentence)
-
-        resume = Book.summarizer(cleaned_sentences, n=3)
+        
+        resume = Book.summarizer(args.summarize, n=3)
         for sentence in resume:
             print(sentence)
 
