@@ -6,12 +6,12 @@ import urllib.error
 import numpy as np
 import re
 import spacy
-import warnings
+import warnings 
 from nltk.tokenize import word_tokenize
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
+from wordcloud import WordCloud, STOPWORDS
 
 warnings.filterwarnings("ignore")
 
@@ -19,7 +19,15 @@ warnings.filterwarnings("ignore")
 if not os.path.exists("pg_catalog.csv"):
     urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", "pg_catalog.csv") # Allows you to download a CSV via a link
 
+
+
+# ---------------------------------------------------------------------
+#                           Class GutenbergBook
+# ---------------------------------------------------------------------
+
+
 class GutenbergBook:
+    
     def GutenbergID(id:int):
         """
         Download a book from Project Gutenberg by its ID.
@@ -46,6 +54,9 @@ class GutenbergBook:
 
         except urllib.error.HTTPError as e:
             print(f"Failed to download book: {e}")
+    
+    
+    
     def CleanFile(id ,file_path):
         """
         Remove the Project Gutenberg header and footer from a book file.
@@ -67,7 +78,84 @@ class GutenbergBook:
            for line in cleaned_lines:
                file.write(line)
 
+# ---------------------------------------------------------------------
+#                           Class Book
+# ---------------------------------------------------------------------
 class Book:
+    
+    def lexdiv(id):
+        GutenbergBook.GutenbergID(id)
+        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+        dico = {}
+        tokens = word_tokenize(txt)
+        tok = [t for t in tokens if t.isalpha()]
+        counts = Counter(tok)
+        dico["tok"] = len(tok)
+        dico["typ"] = len(counts) 
+        dico["hap"] = sum(1 for count in counts.values() if count == 1) # Allows you to keep only the words who appears only one time 
+        if dico["tok"]>0:
+            dico["ttr"] = dico["typ"] / dico["tok"] 
+            dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
+        if dico["typ"]>0:
+            dico["mwf"] = dico["tok"] / dico["typ"]
+        return dico
+    
+    
+    
+    def topics(id):
+        GutenbergBook.GutenbergID(id)
+        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+        dico={}
+        mots = [t for t in txt.split() if t.isalpha()]
+        nb_sections = max(1, len(mots) // 1000)
+
+        size = len(mots) // nb_sections
+        for i in range(nb_sections):
+            section = mots[i*size:(i+1)*size]
+            counts = Counter(section)
+            dico[i+1] = [word for word in counts.most_common(10)]
+        return dico
+   
+   
+   
+    def entities(id):
+        GutenbergBook.GutenbergID(id)
+        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+            txt = f.read()
+
+        nlp = spacy.load("en_core_web_trf")
+        nlp.max_length = 5000000
+        doc = nlp(txt)
+        dico = {}
+        persons = []
+        locations = []
+        
+        for ent in doc.ents:
+            if ent.label_ == "PERSON" and ent.text not in persons:
+                persons.append(ent.text)
+            elif ent.label_ in ("GPE", "LOC") and ent.text not in locations:
+                locations.append(ent.text)
+
+        dico["characters"] = persons
+        dico["locations"] = locations
+        return dico
+   
+   
+   
+    def info(id):
+        df = pd.read_csv("pg_catalog.csv")
+        row = df[df["Text#"] == int(id)]
+        result = {
+        "id": str(id),
+        "authors": row["Authors"].values[0],
+        "bookshelves": row["Bookshelves"].values[0],
+        }
+        return result 
+   
+
+
     def summarizer(id):
 
         file_path = f"./cache/book/book{id}.txt"
@@ -134,6 +222,9 @@ class Book:
             summary.append(filtered_sentences[i])
 
         return summary
+    
+    
+    
     def similar(id):
         list_id = [11,12,16,35,36,55,84,108,113,120,159,164,236,345,834,863,1661,61262,68283,69087,70114]
         list_book = []
@@ -173,67 +264,25 @@ class Book:
         except ValueError:
             print(f"Book ID {args.similar} is not in the collection.")
             return None
-    def lexdiv(id):
-        GutenbergBook.GutenbergID(id)
-        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
-            txt = f.read()
-        dico = {}
-        tokens = word_tokenize(txt)
-        tok = [t for t in tokens if t.isalpha()]
-        counts = Counter(tok)
-        dico["tok"] = len(tok)
-        dico["typ"] = len(counts) 
-        dico["hap"] = sum(1 for count in counts.values() if count == 1) # Allows you to keep only the words who appears only one time 
-        if dico["tok"]>0:
-            dico["ttr"] = dico["typ"] / dico["tok"] 
-            dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
-        if dico["typ"]>0:
-            dico["mwf"] = dico["tok"] / dico["typ"]
-        return dico
-    def topics(id):
-        GutenbergBook.GutenbergID(id)
-        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
-            txt = f.read()
-        dico={}
-        mots = [t for t in txt.split() if t.isalpha()]
-        nb_sections = max(1, len(mots) // 1000)
+    
+    
+    
+    def wordcloud(id):
+        cache_path = f"./cache/wordcloud_{id}.png"
 
-        size = len(mots) // nb_sections
-        for i in range(nb_sections):
-            section = mots[i*size:(i+1)*size]
-            counts = Counter(section)
-            dico[i+1] = [word for word in counts.most_common(10)]
-        return dico
-    def entities(id):
+        if os.path.exists(cache_path):
+            return cache_path
+
         GutenbergBook.GutenbergID(id)
-        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
-            txt = f.read()
+        with open(f"./cache/book/book{id}.txt", "r") as f:
+            text = f.read()
 
-        nlp = spacy.load("en_core_web_trf")
-        nlp.max_length = 5000000
-        doc = nlp(txt)
-        dico = {}
-        persons = []
-        locations = []
-        
-        for ent in doc.ents:
-            if ent.label_ == "PERSON" and ent.text not in persons:
-                persons.append(ent.text)
-            elif ent.label_ in ("GPE", "LOC") and ent.text not in locations:
-                locations.append(ent.text)
+        wc = WordCloud(width=800, height=400, stopwords="english").generate(text)
+        wc.to_file(cache_path)
+        return cache_path
+   
 
-        dico["characters"] = persons
-        dico["locations"] = locations
-        return dico
-    def info(id):
-        df = pd.read_csv("pg_catalog.csv")
-        row = df[df["Text#"] == int(id)]
-        result = {
-        "id": str(id),
-        "authors": row["Authors"].values[0],
-        "bookshelves": row["Bookshelves"].values[0],
-        }
-        return result 
+
     def card(id):
         result = {
         "info": Book.info(id),
@@ -242,14 +291,11 @@ class Book:
         "entities": Book.entities(id),
         "summary": Book.summarizer(id),
         "similar": Book.similar(id),
+        "wordcloud": Book.wordcloud(id),
     }
         return result
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CLI argumets")
-
-# ---------------------------------------------------------------------
-#                               Positional
-# ---------------------------------------------------------------------
 
 # ---------------------------------------------------------------------
 #                               NLP Tasks
@@ -262,6 +308,8 @@ if __name__ == "__main__":
     group.add_argument("--topics", type= int)
     group.add_argument("--similar", type=int)
     group.add_argument("--card", type=int)
+    group.add_argument("--info", type=int)
+    group.add_argument("--wordcloud", type=int)
 
 # ---------------------------------------------------------------------
 #                           NPL Definitions
@@ -278,7 +326,6 @@ if __name__ == "__main__":
         for sentence in resume:
             print(sentence)
 
-
     if args.topics:
         result = Book.topics(args.topics)
         print(result)
@@ -293,4 +340,12 @@ if __name__ == "__main__":
 
     if args.card:
         result = Book.card(args.card)
+        print(result)
+    
+    if args.info:   
+        result = Book.info(args.info)
+        print(result)
+    
+    if args.wordcloud:
+        result = Book.wordcloud(args.wordcloud)
         print(result)
