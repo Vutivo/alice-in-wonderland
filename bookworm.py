@@ -44,7 +44,7 @@ class GutenbergBook:
             if os.path.exists(book_name):
                 os.remove(book_name)  
             raise Exception(f"Failed to download catalog: {e}")
-    def CleanFile(id ,file_path):
+    def CleanFile(id, file_path):
         """
         Remove the Project Gutenberg header and footer from a book file.
         Keeps only the main text content.
@@ -54,23 +54,23 @@ class GutenbergBook:
         start_book = None
         end_book = None
 
-        with open(file_path,'r') as file:
-
+        with open(file_path, 'r') as file:
             for index, line in enumerate(file):
                 if line.startswith("*** START OF THE PROJECT GUTENBERG EBOOK"):
-                   start_book = index +1
+                    start_book = index + 1
                 if line.startswith("*** END OF THE PROJECT GUTENBERG EBOOK"):
                     end_book = index
                 line_file.append(line)
 
-                if start_book is None or end_book is None:
-                    os.remove(file_path)
-                    raise Exception(f"Missing Gutenberg markers in {file_path}")
-                
-            cleaned_lines = line_file[start_book:end_book]
-        with open(file_path,'w') as file:
-           for line in cleaned_lines:
-               file.write(line)
+        if start_book is None or end_book is None:
+            os.remove(file_path)
+            raise Exception(f"Missing Gutenberg markers in {file_path}")
+
+        cleaned_lines = line_file[start_book:end_book]
+
+        with open(file_path, 'w') as file:
+            for line in cleaned_lines:
+                file.write(line)
     def Catalog():
         file_path = "cache/pg_catalog.csv"
         os.makedirs("cache", exist_ok=True)
@@ -270,7 +270,7 @@ if __name__ == "__main__":
 #                               NLP Tasks
 # ---------------------------------------------------------------------
 
-    group = parser.add_mutually_exclusive_group(required=True) # Avoids to put 2 flags in same time 
+    group = parser.add_mutually_exclusive_group(required=True) 
     group.add_argument("--lexdiv", type=int) 
     group.add_argument("--entities", type=int)
     group.add_argument("--summarize", type=int)
