@@ -113,7 +113,7 @@ class Book:
 
         selected = []
         ranked_indices = scores.argsort()[::-1]  
-        line = 3
+        line = 4
         for idx in ranked_indices:
             if len(selected) >= line:
                 break
@@ -133,7 +133,7 @@ class Book:
         for i in selected:
             summary.append(filtered_sentences[i])
 
-        return summary
+        return " ".join(summary)
     def similar(id):
         list_id = [11,12,16,35,36,55,84,108,113,120,159,164,236,345,834,863,1661,61262,68283,69087,70114]
         list_book = []
@@ -274,9 +274,8 @@ if __name__ == "__main__":
         print(result)
 
     if args.summarize:
-        resume = Book.summarizer(args.summarize, n=3)
-        for sentence in resume:
-            print(sentence)
+        resume = Book.summarizer(args.summarize)
+        print(resume)
 
 
     if args.topics:
