@@ -99,6 +99,11 @@ class GutenbergBook:
 class Book:
     def Summarizer(id):
         try:
+            summary_path = f"./cache/summary/summary{id}.txt"
+            if os.path.exists(summary_path):
+                with open(summary_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+
             file_path = f"./cache/book/book{id}.txt"
 
             if not os.path.exists(file_path):
@@ -164,7 +169,13 @@ class Book:
             for i in selected:
                 summary.append(filtered_sentences[i])
 
-            return " ".join(summary)
+            result = " ".join(summary)
+
+            os.makedirs("./cache/summary", exist_ok=True)
+            with open(summary_path, 'w', encoding='utf-8') as f:
+                f.write(result)
+
+            return result
         except FileNotFoundError:
             raise FileNotFoundError(f"Error: Book file not found for ID {id}")
         except Exception as e:
