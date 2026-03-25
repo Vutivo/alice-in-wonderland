@@ -50,6 +50,17 @@ python bookworm.py --card 11
 | `--similar` | `<ID>` | Find the 5 most similar books in the corpus |
 | `--card` | `<ID>` | Return a full metadata card combining all of the above |
 
+## NLP Tasks
+
+### Lexical Diversity
+![Pipeline lexdiv](assets/pipeline_lexdiv.svg)
+
+### Topic Modeling
+![Pipeline topics](assets/pipeline_topics.svg)
+
+### Named Entity Recognition
+![Pipeline entities](assets/pipeline_entities.svg)
+
 ## Credits
  
 This project was made by [MelioSousLo](https://github.com/MelioSousLo), and [Kenan-LCF](https://github.com/Kenan-LCF).
