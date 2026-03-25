@@ -40,11 +40,10 @@ class GutenbergBook:
                 GutenbergBook.CleanFile(id,book_name)
 
 
-        except urllib.error.URLError as e:
-            print(f"Failed to download book: {e}")
-
-        except urllib.error.HTTPError as e:
-            print(f"Failed to download book: {e}")
+        except (urllib.error.URLError, urllib.error.HTTPError) as e:
+            if os.path.exists(book_name):
+                os.remove(book_name)  
+            raise Exception(f"Failed to download catalog: {e}")
     def CleanFile(id ,file_path):
         """
         Remove the Project Gutenberg header and footer from a book file.
@@ -217,7 +216,7 @@ class Book:
         with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
             txt = f.read()
 
-        nlp = spacy.load("en_core_web_trf")
+        nlp = spacy.load("en_core_web_lg")
         nlp.max_length = 5000000
         doc = nlp(txt)
         dico = {}
