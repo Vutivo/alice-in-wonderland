@@ -53,13 +53,13 @@ python bookworm.py --card 11
 ## NLP Tasks
 
 ### Lexical Diversity
-![Pipeline lexdiv](assets/pipeline_lexdiv.svg)
+![Pipeline lexdiv](assets/lexdiv_pipeline.svg)
 
 ### Topic Modeling
-![Pipeline topics](assets/pipeline_topics.svg)
+![Pipeline topics](assets/topics_pipeline.svg)
 
 ### Named Entity Recognition
-![Pipeline entities](assets/pipeline_entities.svg)
+![Pipeline entities](assets/entities_pipeline.svg)
 
 ## Credits
  
