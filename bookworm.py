@@ -308,20 +308,21 @@ class Book:
         result = {}
         
         methods = {
-            "info": Book.Info(id),
-            "lexdiv": Book.Lexdiv(id),
-            "topic": Book.Topics(id),
-            "entities": Book.Entities(id),
-            "summary": Book.Summarizer(id),
-            "similar": Book.Similar(id),
+            "info": Book.Info,
+            "lexdiv": Book.Lexdiv,
+            "topic": Book.Topics,
+            "entities": Book.Entities,
+            "summary": Book.Summarizer,
+            "similar": Book.Similar,
         }
         
         for key, func in methods.items():
             try:
                 result[key] = func(id)
-                print(f"{key} done ✅") 
-            except Exception:
+                print(f"{key} done ") 
+            except Exception as e:
                 result[key] = "ERROR"
+                print(f"{key} ERROR: {e}")
         
         return result
 
