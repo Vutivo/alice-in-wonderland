@@ -20,6 +20,7 @@ warnings.filterwarnings("ignore")
 
 class GutenbergBook:
     def GutenbergID(id:int):
+
         """
         Download a book from Project Gutenberg by its ID.
         Reuses the file if it already exists.
@@ -44,6 +45,7 @@ class GutenbergBook:
             if os.path.exists(book_name):
                 os.remove(book_name)  
             raise Exception(f"Failed to download catalog: {e}")
+
     def CleanFile(id, file_path):
         """
         Remove the Project Gutenberg header and footer from a book file.
@@ -54,7 +56,7 @@ class GutenbergBook:
         start_book = None
         end_book = None
 
-        with open(file_path, 'r') as file:
+        with open(file_path, 'r',encoding='utf-8', errors='ignore') as file:
             for index, line in enumerate(file):
                 if line.startswith("*** START OF THE PROJECT GUTENBERG EBOOK"):
                     start_book = index + 1
@@ -71,6 +73,7 @@ class GutenbergBook:
         with open(file_path, 'w') as file:
             for line in cleaned_lines:
                 file.write(line)
+
     def Catalog():
         file_path = "cache/pg_catalog.csv"
         os.makedirs("cache", exist_ok=True)
@@ -89,9 +92,11 @@ class Book:
         if not os.path.exists(file_path):
             GutenbergBook.GutenbergID(args.summarize)
 
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             text = f.read()
 
+            if not text.strip():
+                raise Exception(f"Book {id} is empty.")
         sentences = re.split(r'(?<=[.!?])\s+|\.{3}\s*', text)
 
         cleaned_sentences = []
@@ -148,21 +153,20 @@ class Book:
             summary.append(filtered_sentences[i])
 
         return " ".join(summary)
+
     def Similar(id):
         list_id = [11,12,16,35,36,55,84,108,113,120,159,164,236,345,834,863,1661,61262,68283,69087,70114]
         list_book = []
         list_titles = []
         file_path = f"./cache/book/"
+        df = pd.read_csv("cache/pg_catalog.csv")
         for element in list_id:
             file = f"book{element}.txt"
             final_file = file_path + file
             if not os.path.exists(final_file):
                 GutenbergBook.GutenbergID(element)
-            
-            with open(final_file, 'r') as f:
+            with open(final_file, 'r', encoding='utf-8', errors='ignore') as f:
                 list_book.append(f.read())
-            
-            df = pd.read_csv("cache/pg_catalog.csv")
             title = df[df["Text#"] == element]["Title"].values[0]
             list_titles.append(title)
 
@@ -187,9 +191,10 @@ class Book:
         except ValueError:
             print(f"Book ID {args.similar} is not in the collection.")
             return None
+
     def Lexdiv(id):
         GutenbergBook.GutenbergID(id)
-        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+        with open(f"./cache/book/book{id}.txt", "r", encoding='utf-8', errors='ignore') as f:
             txt = f.read()
         dico = {}
         tokens = word_tokenize(txt)
@@ -198,15 +203,22 @@ class Book:
         dico["tok"] = len(tok)
         dico["typ"] = len(counts) 
         dico["hap"] = sum(1 for count in counts.values() if count == 1) # Allows you to keep only the words who appears only one time 
+
+        if dico["tok"] == 0:
+            raise Exception(f"Book {id} has no words.")
+        if dico["typ"] == 0:
+            raise Exception(f"Book {id} has no unique words.")
+        
         if dico["tok"]>0:
             dico["ttr"] = dico["typ"] / dico["tok"] 
             dico["mwl"] = sum(len(word) for word in tok) / dico["tok"]
         if dico["typ"]>0:
             dico["mwf"] = dico["tok"] / dico["typ"]
         return dico
+
     def Topics(id):
         GutenbergBook.GutenbergID(id)
-        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+        with open(f"./cache/book/book{id}.txt", "r", encoding='utf-8', errors='ignore') as f:
             txt = f.read()
         dico={}
         mots = [t for t in txt.split() if t.isalpha()]
@@ -218,9 +230,10 @@ class Book:
             counts = Counter(section)
             dico[i+1] = [word for word in counts.most_common(10)]
         return dico
+
     def Entities(id):
         GutenbergBook.GutenbergID(id)
-        with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
+        with open(f"./cache/book/book{id}.txt", "r", encoding='utf-8', errors='ignore') as f:
             txt = f.read()
 
         nlp = spacy.load("en_core_web_lg")
@@ -239,15 +252,19 @@ class Book:
         dico["characters"] = persons
         dico["locations"] = locations
         return dico
+
     def Info(id):
         df = pd.read_csv("cache/pg_catalog.csv")
         row = df[df["Text#"] == int(id)]
+        if row is None:
+            raise Exception(f"Id {id} doesn't exist")
         result = {
         "id": str(id),
         "authors": row["Authors"].values[0],
         "bookshelves": row["Bookshelves"].values[0],
         }
         return result 
+
     def Card(id):
         result = {
         "info": Book.Info(id),
@@ -258,6 +275,7 @@ class Book:
         "similar": Book.Similar(id),
     }
         return result
+
 if __name__ == "__main__":
     GutenbergBook.Catalog()
     parser = argparse.ArgumentParser(description="CLI argumets")
