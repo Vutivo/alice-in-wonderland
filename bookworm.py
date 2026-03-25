@@ -16,8 +16,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 warnings.filterwarnings("ignore")
 
 
-if not os.path.exists("pg_catalog.csv"):
-    urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", "pg_catalog.csv") # Allows you to download a CSV via a link
+
 
 class GutenbergBook:
     def GutenbergID(id:int):
@@ -66,9 +65,18 @@ class GutenbergBook:
         with open(file_path,'w') as file:
            for line in cleaned_lines:
                file.write(line)
+    def Catalog():
+        file_path= "cache/pg_catalog.csv"
+        try:
+            if not os.path.exists(file_path):
+                urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", file_path) # Allows you to download a CSV via a link
+        except urllib.error.URLError as e:
+            print(f"Failed to download book: {e}")
 
+        except urllib.error.HTTPError as e:
+            print(f"Failed to download book: {e}")
 class Book:
-    def summarizer(id):
+    def Summarizer(id):
 
         file_path = f"./cache/book/book{id}.txt"
 
@@ -134,7 +142,7 @@ class Book:
             summary.append(filtered_sentences[i])
 
         return " ".join(summary)
-    def similar(id):
+    def Similar(id):
         list_id = [11,12,16,35,36,55,84,108,113,120,159,164,236,345,834,863,1661,61262,68283,69087,70114]
         list_book = []
         list_titles = []
@@ -148,7 +156,7 @@ class Book:
             with open(final_file, 'r') as f:
                 list_book.append(f.read())
             
-            df = pd.read_csv("pg_catalog.csv")
+            df = pd.read_csv("cache/pg_catalog.csv")
             title = df[df["Text#"] == element]["Title"].values[0]
             list_titles.append(title)
 
@@ -173,7 +181,7 @@ class Book:
         except ValueError:
             print(f"Book ID {args.similar} is not in the collection.")
             return None
-    def lexdiv(id):
+    def Lexdiv(id):
         GutenbergBook.GutenbergID(id)
         with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
             txt = f.read()
@@ -190,7 +198,7 @@ class Book:
         if dico["typ"]>0:
             dico["mwf"] = dico["tok"] / dico["typ"]
         return dico
-    def topics(id):
+    def Topics(id):
         GutenbergBook.GutenbergID(id)
         with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
             txt = f.read()
@@ -204,7 +212,7 @@ class Book:
             counts = Counter(section)
             dico[i+1] = [word for word in counts.most_common(10)]
         return dico
-    def entities(id):
+    def Entities(id):
         GutenbergBook.GutenbergID(id)
         with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
             txt = f.read()
@@ -225,8 +233,8 @@ class Book:
         dico["characters"] = persons
         dico["locations"] = locations
         return dico
-    def info(id):
-        df = pd.read_csv("pg_catalog.csv")
+    def Info(id):
+        df = pd.read_csv("cache/pg_catalog.csv")
         row = df[df["Text#"] == int(id)]
         result = {
         "id": str(id),
@@ -234,17 +242,18 @@ class Book:
         "bookshelves": row["Bookshelves"].values[0],
         }
         return result 
-    def card(id):
+    def Card(id):
         result = {
-        "info": Book.info(id),
-        "lexdiv": Book.lexdiv(id),
-        "topics": Book.topics(id),
-        "entities": Book.entities(id),
-        "summary": Book.summarizer(id),
-        "similar": Book.similar(id),
+        "info": Book.Info(id),
+        "lexdiv": Book.Lexdiv(id),
+        "topics": Book.Topics(id),
+        "entities": Book.Entities(id),
+        "summary": Book.Summarizer(id),
+        "similar": Book.Similar(id),
     }
         return result
 if __name__ == "__main__":
+    GutenbergBook.Catalog()
     parser = argparse.ArgumentParser(description="CLI argumets")
 
 # ---------------------------------------------------------------------
@@ -270,26 +279,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.lexdiv:
-        result = Book.lexdiv(args.lexdiv)
+        result = Book.Lexdiv(args.lexdiv)
         print(result)
 
     if args.summarize:
-        resume = Book.summarizer(args.summarize)
+        resume = Book.Summarizer(args.summarize)
         print(resume)
 
 
     if args.topics:
-        result = Book.topics(args.topics)
+        result = Book.Topics(args.topics)
         print(result)
 
     if args.entities:
-        result = Book.entities(args.entities)
+        result = Book.Entities(args.entities)
         print(result)
 
     if args.similar:
-        result = Book.similar(args.similar)
+        result = Book.Similar(args.similar)
         print(result)
 
     if args.card:
-        result = Book.card(args.card)
+        result = Book.Card(args.card)
         print(result)
