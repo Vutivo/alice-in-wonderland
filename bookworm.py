@@ -169,7 +169,8 @@ class Book:
                 
             return results
         except ValueError:
-            raise ValueError(f"Book ID {args.similar} is not in the collection.")
+            print(f"Book ID {args.similar} is not in the collection.")
+            return None
     def lexdiv(id):
         GutenbergBook.GutenbergID(id)
         with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
@@ -207,6 +208,7 @@ class Book:
             txt = f.read()
 
         nlp = spacy.load("en_core_web_trf")
+        nlp.max_length = 5000000
         doc = nlp(txt)
         dico = {}
         persons = []
