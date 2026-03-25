@@ -7,6 +7,7 @@ import numpy as np
 import re
 import spacy
 import warnings
+import json
 from nltk.tokenize import word_tokenize
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -99,6 +100,11 @@ class GutenbergBook:
 class Book:
     def Summarizer(id):
         try:
+            summary_path = f"./cache/summary/summary{id}.txt"
+            if os.path.exists(summary_path):
+                with open(summary_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+
             file_path = f"./cache/book/book{id}.txt"
 
             if not os.path.exists(file_path):
@@ -164,7 +170,13 @@ class Book:
             for i in selected:
                 summary.append(filtered_sentences[i])
 
-            return " ".join(summary)
+            result = " ".join(summary)
+
+            os.makedirs("./cache/summary", exist_ok=True)
+            with open(summary_path, 'w', encoding='utf-8') as f:
+                f.write(result)
+
+            return result
         except FileNotFoundError:
             raise FileNotFoundError(f"Error: Book file not found for ID {id}")
         except Exception as e:
@@ -239,27 +251,47 @@ class Book:
         except Exception as e:
             raise Exception(f"Error computing lexical diversity: {e}")
 
+
     def Topics(id):
-        try:
+        try: 
+            cache_path = f"./cache/topics/topics{id}.json"
+            if os.path.exists(cache_path):
+                with open(cache_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+
             GutenbergBook.GutenbergID(id)
             with open(f"./cache/book/book{id}.txt", "r", encoding='utf-8', errors='ignore') as f:
                 txt = f.read()
-            dico={}
+
+            dico = {}
             mots = [t for t in txt.split() if t.isalpha()]
             nb_sections = max(1, len(mots) // 1000)
-
             size = len(mots) // nb_sections
             for i in range(nb_sections):
                 section = mots[i*size:(i+1)*size]
                 counts = Counter(section)
                 dico[i+1] = [word for word in counts.most_common(10)]
-            return dico
+
+            result = dico
+
+            os.makedirs("./cache/topics", exist_ok=True)
+            with open(cache_path, 'w', encoding='utf-8') as f:
+                json.dump(result, f)
+
+            return result
+
         except FileNotFoundError:
             raise FileNotFoundError(f"Error: Book file not found for ID {id}")
         except Exception as e:
             raise Exception(f"Error extracting topics: {e}")
+        
     def Entities(id):
         try:
+            cache_path = f"./cache/entitie/entitie{id}.json"
+            if os.path.exists(cache_path):
+                with open(cache_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+
             GutenbergBook.GutenbergID(id)
             with open(f"./cache/book/book{id}.txt", "r", encoding='utf-8', errors='ignore') as f:
                 txt = f.read()
@@ -279,7 +311,15 @@ class Book:
 
             dico["characters"] = list(persons)
             dico["locations"] = list(locations)
-            return dico
+
+            result = dico
+            os.makedirs("./cache/entitie", exist_ok=True)
+            with open(cache_path, 'w', encoding='utf-8') as f:
+                json.dump(result, f)
+
+            return result
+
+
         except FileNotFoundError:
             raise FileNotFoundError(f"Error: Book file not found for ID {id}")
         except OSError as e:
