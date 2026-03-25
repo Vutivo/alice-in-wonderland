@@ -3,7 +3,6 @@ import argparse
 import os
 import urllib.request
 import urllib.error
-import nltk
 import numpy as np
 import re
 import spacy
@@ -27,16 +26,19 @@ class GutenbergBook:
         Reuses the file if it already exists.
         Cleans the book using GutenbergBook.CleanFile.
         """
+        if int(id) < 0:
+            raise ValueError(f"Invalid book ID: {id}")
         url = f"https://www.gutenberg.org/cache/epub/{id}/pg{id}.txt"
         try:
-            os.makedirs("./cache/book", exist_ok=True)
-            book_name = os.path.join("./cache/book", f"book{id}.txt")
+            if id > 0:
+                os.makedirs("./cache/book", exist_ok=True)
+                book_name = os.path.join("./cache/book", f"book{id}.txt")
 
-            if os.path.exists(book_name):
-                return book_name
+                if os.path.exists(book_name):
+                    return book_name
 
-            urllib.request.urlretrieve(url, book_name)
-            GutenbergBook.CleanFile(id,book_name)
+                urllib.request.urlretrieve(url, book_name)
+                GutenbergBook.CleanFile(id,book_name)
 
 
         except urllib.error.URLError as e:
@@ -66,7 +68,7 @@ class GutenbergBook:
                file.write(line)
 
 class Book:
-    def summarizer(id, n=3):
+    def summarizer(id):
 
         file_path = f"./cache/book/book{id}.txt"
 
@@ -111,9 +113,9 @@ class Book:
 
         selected = []
         ranked_indices = scores.argsort()[::-1]  
-
+        line = 3
         for idx in ranked_indices:
-            if len(selected) >= n:
+            if len(selected) >= line:
                 break
 
             too_similar = False
