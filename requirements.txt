@@ -5,4 +5,4 @@ scikit-learn==1.5.1
 gensim==4.3.3
 sumy==0.11.0
 nltk==3.9.1
-python -m spacy download en_core_web_sm
+python -m spacy download en_core_web_trf
