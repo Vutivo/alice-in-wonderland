@@ -51,15 +51,22 @@ class GutenbergBook:
         Overwrites the original file with the cleaned text.
         """
         line_file = []
-        start_book = 0
-        end_book = 0
+        start_book = None
+        end_book = None
+
         with open(file_path,'r') as file:
+
             for index, line in enumerate(file):
                 if line.startswith("*** START OF THE PROJECT GUTENBERG EBOOK"):
                    start_book = index +1
                 if line.startswith("*** END OF THE PROJECT GUTENBERG EBOOK"):
                     end_book = index
                 line_file.append(line)
+
+                if start_book is None or end_book is None:
+                    os.remove(file_path)
+                    raise Exception(f"Missing Gutenberg markers in {file_path}")
+                
             cleaned_lines = line_file[start_book:end_book]
         with open(file_path,'w') as file:
            for line in cleaned_lines:
