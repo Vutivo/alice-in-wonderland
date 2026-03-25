@@ -66,15 +66,15 @@ class GutenbergBook:
            for line in cleaned_lines:
                file.write(line)
     def Catalog():
-        file_path= "cache/pg_catalog.csv"
+        file_path = "cache/pg_catalog.csv"
+        os.makedirs("cache", exist_ok=True)
         try:
             if not os.path.exists(file_path):
-                urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", file_path) # Allows you to download a CSV via a link
-        except urllib.error.URLError as e:
-            print(f"Failed to download book: {e}")
-
-        except urllib.error.HTTPError as e:
-            print(f"Failed to download book: {e}")
+                urllib.request.urlretrieve("https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv", file_path)
+        except (urllib.error.URLError, urllib.error.HTTPError) as e:
+            if os.path.exists(file_path):
+                os.remove(file_path)  
+            raise Exception(f"Failed to download catalog: {e}")
 class Book:
     def Summarizer(id):
 
