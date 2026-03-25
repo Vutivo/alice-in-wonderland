@@ -156,7 +156,7 @@ class Book:
         X = vectorizer.fit_transform(list_book)
 
         try:
-            target_index = list_id.index(int(args.similar))
+            target_index = list_id.index(int(id))
 
             similarities = cosine_similarity(X[target_index], X).flatten()
             ranked = similarities.argsort()[::-1]
@@ -167,9 +167,10 @@ class Book:
                 if len(results) == 5:
                     break
                 
-            return result
+            return results
         except ValueError:
-            raise ValueError(f"Book ID {args.similar} is not in the collection.")
+            print(f"Book ID {args.similar} is not in the collection.")
+            return None
     def lexdiv(id):
         GutenbergBook.GutenbergID(id)
         with open(f"./cache/book/book{id}.txt", "r", encoding="utf-8") as f:
@@ -207,6 +208,7 @@ class Book:
             txt = f.read()
 
         nlp = spacy.load("en_core_web_trf")
+        nlp.max_length = 5000000
         doc = nlp(txt)
         dico = {}
         persons = []
@@ -221,7 +223,25 @@ class Book:
         dico["characters"] = persons
         dico["locations"] = locations
         return dico
-
+    def info(id):
+        df = pd.read_csv("pg_catalog.csv")
+        row = df[df["Text#"] == int(id)]
+        result = {
+        "id": str(id),
+        "authors": row["Authors"].values[0],
+        "bookshelves": row["Bookshelves"].values[0],
+        }
+        return result 
+    def card(id):
+        result = {
+        "info": Book.info(id),
+        "lexdiv": Book.lexdiv(id),
+        "topics": Book.topics(id),
+        "entities": Book.entities(id),
+        "summary": Book.summarizer(id),
+        "similar": Book.similar(id),
+    }
+        return result
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CLI argumets")
 
@@ -267,4 +287,8 @@ if __name__ == "__main__":
 
     if args.similar:
         result = Book.similar(args.similar)
+        print(result)
+
+    if args.card:
+        result = Book.card(args.card)
         print(result)
