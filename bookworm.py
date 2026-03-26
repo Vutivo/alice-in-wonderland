@@ -286,6 +286,25 @@ class Book:
             raise FileNotFoundError(f"Error: Book file not found for ID {id}")
 
     def Lexdiv(id:int):
+        """
+    Computes lexical diversity metrics for a Project Gutenberg book.
+
+    Args:
+        id (int): The Gutenberg book ID.
+
+    Returns:
+        dict: A dictionary with the following keys:
+            - "tok" (int): Total number of tokens.
+            - "typ" (int): Number of unique words.
+            - "hap" (int): Number of words appearing only once.
+            - "ttr" (float): Type-Token Ratio (unique words / total tokens).
+            - "mwl" (float): Mean word length in characters.
+            - "mwf" (float): Mean word frequency (total tokens / unique words).
+
+    Raises:
+        FileNotFoundError: If the book file is not found.
+        Exception: If the book has no words or an error occurs during processing.
+        """
         try:
             GutenbergBook.GutenbergID(id)
             with open(f"./cache/book/book{id}.txt", "r", encoding='utf-8', errors='ignore') as f:
@@ -315,6 +334,24 @@ class Book:
             raise Exception(f"Error computing lexical diversity: {e}")
 
     def Topics(id:int):
+        """
+    Extracts the most frequent words per section of a Project Gutenberg book.
+
+    Splits the book into sections of ~1000 words and returns the top 10
+    most frequent words for each section.
+    The result is cached at ./cache/topics/topics{id}.json.
+
+    Args:
+        id (int): The Gutenberg book ID.
+
+    Returns:
+        dict: A dictionary where each key is a section number (int) and
+              each value is a list of (word, count) tuples for the top 10 words.
+
+    Raises:
+        FileNotFoundError: If the book file is not found.
+        Exception: If an error occurs during processing.
+        """
         try: 
             cache_path = f"./cache/topics/topics{id}.json"
             if os.path.exists(cache_path):
@@ -348,6 +385,24 @@ class Book:
             raise Exception(f"Error extracting topics: {e}")
         
     def Entities(id:int):
+        """
+    Extracts named entities (characters and locations) from a Project Gutenberg book using spaCy.
+
+    The result is cached at ./cache/entitie/entitie{id}.json.
+
+    Args:
+        id (int): The Gutenberg book ID.
+
+    Returns:
+        dict: A dictionary with the following keys:
+            - "characters" (list[str]): Person names detected in the text.
+            - "locations" (list[str]): Place names (GPE, LOC) detected in the text.
+
+    Raises:
+        FileNotFoundError: If the book file is not found.
+        OSError: If the spaCy model fails to load.
+        Exception: If an error occurs during processing.
+    """
         try:
             cache_path = f"./cache/entitie/entitie{id}.json"
             if os.path.exists(cache_path):
