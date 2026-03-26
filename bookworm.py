@@ -675,22 +675,6 @@ class Book:
             print(f"Error exporting card: {e}")
             return None
 
-    def card(id):
-        try:
-            result = {
-            "info": Book.info(id),
-            "lexdiv": Book.lexdiv(id),
-            "topics": Book.topics(id),
-            "entities": Book.entities(id),
-            "summary": Book.summarizer(id),
-            "similar": Book.similar(id),
-            "wordcloud": Book.wordcloud(id),
-        }
-            return result
-        
-        except Exception as e:
-            print(f"Error creating book card: {e}")
-            return {}
         
 
 if __name__ == "__main__":
@@ -708,7 +692,6 @@ if __name__ == "__main__":
     group.add_argument("--topics", type= int)
     group.add_argument("--similar", type=int)
     group.add_argument("--card", type=int)
-    group.add_argument("--info", type=int)
     group.add_argument("--wordcloud", type=int)
     group.add_argument("--author", type=str)
     group.add_argument("--category", type=str)
@@ -741,11 +724,7 @@ if __name__ == "__main__":
         print(result)
 
     if args.card:
-        result = Book.card(args.card)
-        print(result)
-    
-    if args.info:   
-        result = Book.info(args.info)
+        result = Book.Card(args.card)
         print(result)
     
     if args.wordcloud is not None:
