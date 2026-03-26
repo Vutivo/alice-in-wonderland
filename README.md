@@ -61,6 +61,16 @@ python bookworm.py --card 11
 ### Named Entity Recognition
 ![Pipeline entities](assets/entities_pipeline.svg)
 
+### Summary
+![Pipeline summary](assets/summarizer_pipeline.svg)
+
+### Similar
+![Pipeline similar](assets/similar_pipeline.svg)
+
+### Card
+![Pipeline card](assets/card_pipeline.svg)
+
+
 
 ## Bonus réalisés
 
