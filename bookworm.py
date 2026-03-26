@@ -3,16 +3,21 @@ import argparse
 import os
 import urllib.request
 import urllib.error
+import urllib.parse
 import numpy as np
 import re
 import spacy
-import warnings
+import warnings 
 import json
+
 from nltk.tokenize import word_tokenize
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
+from wordcloud import WordCloud, STOPWORDS
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 warnings.filterwarnings("ignore")
 
@@ -22,6 +27,7 @@ warnings.filterwarnings("ignore")
 # ---------------------------------------------------------------------
 
 class GutenbergBook:
+    
     def GutenbergID(id:int):
 
         """
@@ -42,17 +48,17 @@ class GutenbergBook:
         if int(id) < 0:
             raise ValueError(f"Invalid book ID: {id}")
         url = f"https://www.gutenberg.org/cache/epub/{id}/pg{id}.txt"
+        book_name = os.path.join("./cache/book", f"book{id}.txt")
         try:
             if id > 0:
                 os.makedirs("./cache/book", exist_ok=True)
-                book_name = os.path.join("./cache/book", f"book{id}.txt")
 
                 if os.path.exists(book_name):
                     return book_name
 
                 urllib.request.urlretrieve(url, book_name)
-                GutenbergBook.CleanFile(id,book_name)
-
+                GutenbergBook.CleanFile(id, book_name)
+                return book_name
 
         except (urllib.error.URLError, urllib.error.HTTPError) as e:
             if os.path.exists(book_name):
@@ -120,7 +126,6 @@ class GutenbergBook:
 
 # ---------------------------------------------------------------------
 #                           Class Book
-
 # ---------------------------------------------------------------------
 class Book:
     def Summarizer(id:int):
@@ -221,8 +226,10 @@ class Book:
                 f.write(result)
 
             return result
+        
         except FileNotFoundError:
             raise FileNotFoundError(f"Error: Book file not found for ID {id}")
+        
         except Exception as e:
             raise Exception(f"Error generating summary: {e}")
 
@@ -262,7 +269,9 @@ class Book:
                 title = df[df["Text#"] == element]["Title"].values[0]
                 list_titles.append(title)
 
-        
+            if len(list_book) == 0:
+                print("Error: No books could be loaded for comparison")
+                return []
 
             vectorizer = TfidfVectorizer(stop_words="english")
             X = vectorizer.fit_transform(list_book)
@@ -280,8 +289,10 @@ class Book:
                     break
                     
             return results
+        
         except ValueError:
             raise ValueError(f"Book ID {args.similar} is not in the collection.")
+        
         except FileNotFoundError:
             raise FileNotFoundError(f"Error: Book file not found for ID {id}")
 
@@ -439,8 +450,10 @@ class Book:
 
         except FileNotFoundError:
             raise FileNotFoundError(f"Error: Book file not found for ID {id}")
+         
         except OSError as e:
             raise OSError(f"Error loading spaCy model: {e}")
+            
         except Exception as e:
             raise Exception(f"Error extracting entities: {e}")
 
@@ -476,6 +489,7 @@ class Book:
             return result 
         except FileNotFoundError:
             raise FileNotFoundError ("Error: pg_catalog.csv not found")
+        
         except Exception as e:
             raise Exception(f"Error retrieving book info: {e}")
 
@@ -516,16 +530,172 @@ class Book:
             except Exception as e:
                 result[key] = "ERROR"
                 print(f"{key} ERROR: {e}")
-        
         return result
+    
+    
+    def wordcloud(id):
+        try:
+            cache_path = f"./cache/wordcloud_{id}.png"
+
+            if os.path.exists(cache_path):
+                return cache_path
+
+            GutenbergBook.GutenbergID(id)
+            with open(f"./cache/book/book{id}.txt", "r", encoding='utf-8') as f:
+                text = f.read()
+
+            wc = WordCloud(width=800, height=400, stopwords=STOPWORDS).generate(text) # We import a set of words to ignore for the wordcloud "STOPWORDS"
+            wc.to_file(cache_path)
+            return cache_path
+        except FileNotFoundError:
+            print(f"Error: Book file not found for ID {id}")
+            return None
+        except ValueError as e:
+            print(f"Error generating wordcloud: {e}")
+            return None
+        except Exception as e:
+            print(f"Error creating wordcloud: {e}")
+            return None
+
+
+
+    def cover(id):
+        try:
+            cache_path = f"./cache/cover_{id}.jpg"
+            if os.path.exists(cache_path):
+                return cache_path
+            
+            df = pd.read_csv("pg_catalog.csv")
+            row = df[df["Text#"] == int(id)]
+            if row.empty:
+                print(f"Error: Book ID {id} not found in catalog")
+                return None
+                
+            title = row["Title"].values[0]
+            query = urllib.parse.quote_plus(title)
+            url = f"https://openlibrary.org/search.json?q={query}&limit=1"
+            
+            try:
+                with urllib.request.urlopen(url) as response:
+                    data = json.loads(response.read().decode())
+            except urllib.error.URLError as e:
+                print(f"Error fetching cover data: {e}")
+                return None
+            
+            docs = data.get("docs", [])
+            if docs and "cover_i" in docs[0]:
+                cover_id = docs[0]["cover_i"]
+                img_url = f"https://covers.openlibrary.org/b/id/{cover_id}-M.jpg"
+                try:
+                    urllib.request.urlretrieve(img_url, cache_path)
+                    return cache_path
+                except urllib.error.URLError as e:
+                    print(f"Error downloading cover image: {e}")
+                    return None
+            
+            return None  # pas de couverture trouvée
+        except FileNotFoundError:
+            print("Error: pg_catalog.csv not found")
+            return None
+        except Exception as e:
+            print(f"Error retrieving cover: {e}")
+            return None
+
+
+
+    def by_author(author_name):
+        try:
+            df = pd.read_csv("pg_catalog.csv")
+            mask = df["Authors"].str.contains(author_name, case=False, na=False) # Allows you to search for an author even if you don't write the name exactly : case = case insensitive, na = False to ignore NaN values
+            matches = df[mask]
+            if matches.empty:
+                print(f"No books found for author: {author_name}")
+                return []
+            results = []
+            for _, row in matches.iterrows(): # iterrows() return 2 things eachj time : the index and the row itself, we use _ for the index because we don't need it (convention in PYTHON)
+                book_id = row["Text#"]
+                path = GutenbergBook.GutenbergID(book_id)
+                results.append({"id": book_id, "title": row["Title"], "path": path})
+            return results
+        except FileNotFoundError:
+            print("Error: pg_catalog.csv not found")
+            return []
+        except Exception as e:
+            print(f"Error searching by author: {e}")
+            return []
+
+
+
+    def by_category(category_name):
+        try:
+            
+            df = pd.read_csv("pg_catalog.csv")
+            mask = df["Bookshelves"].str.contains(category_name, case=False, na=False)
+            matches = df[mask]
+            if matches.empty:
+                print(f"No books found for category: {category_name}")
+                return []
+            results = []
+            for _, row in matches.iterrows():
+                book_id = row["Text#"]
+                path = GutenbergBook.GutenbergID(book_id)
+                results.append({"id": book_id, "title": row["Title"], "path": path})
+            return results
+        
+        except FileNotFoundError:
+            print("Error: pg_catalog.csv not found")
+            return []
+        
+        except Exception as e:
+            print(f"Error searching by category: {e}")
+            return []
+
+
+    def export_card(id):
+        try:
+
+            os.makedirs("./cache/exports", exist_ok=True)
+            pdf_path = f"./cache/exports/card_{id}.pdf"
+            
+            data = Book.card(id)
+            doc = SimpleDocTemplate(pdf_path, pagesize=A4)
+            styles = getSampleStyleSheet()
+            story = []
+
+            story.append(Paragraph(f"Book #{id}", styles["Title"]))
+            story.append(Paragraph(f"Author: {data.get('info', {}).get('authors', 'N/A')}", styles["Normal"]))
+            story.append(Spacer(1, 12))
+            story.append(Paragraph("Summary", styles["Heading2"]))
+            story.append(Paragraph(" ".join(data.get("summary", [])), styles["Normal"]))
+
+            doc.build(story)
+            return pdf_path
+        
+        except Exception as e:
+            print(f"Error exporting card: {e}")
+            return None
+
+    def card(id):
+        try:
+            result = {
+            "info": Book.info(id),
+            "lexdiv": Book.lexdiv(id),
+            "topics": Book.topics(id),
+            "entities": Book.entities(id),
+            "summary": Book.summarizer(id),
+            "similar": Book.similar(id),
+            "wordcloud": Book.wordcloud(id),
+        }
+            return result
+        
+        except Exception as e:
+            print(f"Error creating book card: {e}")
+            return {}
+        
 
 if __name__ == "__main__":
     GutenbergBook.Catalog()
     parser = argparse.ArgumentParser(description="CLI argumets")
-
-# ---------------------------------------------------------------------
-#                               Positional
-# ---------------------------------------------------------------------
 
 # ---------------------------------------------------------------------
 #                               NLP Tasks
@@ -538,6 +708,11 @@ if __name__ == "__main__":
     group.add_argument("--topics", type= int)
     group.add_argument("--similar", type=int)
     group.add_argument("--card", type=int)
+    group.add_argument("--info", type=int)
+    group.add_argument("--wordcloud", type=int)
+    group.add_argument("--author", type=str)
+    group.add_argument("--category", type=str)
+    group.add_argument("--export", type=int)
 
 # ---------------------------------------------------------------------
 #                           NPL Definitions
@@ -553,7 +728,6 @@ if __name__ == "__main__":
         resume = Book.Summarizer(args.summarize)
         print(resume)
 
-
     if args.topics:
         result = Book.Topics(args.topics)
         print(result)
@@ -567,5 +741,25 @@ if __name__ == "__main__":
         print(result)
 
     if args.card:
-        result = Book.Card(args.card)
+        result = Book.card(args.card)
+        print(result)
+    
+    if args.info:   
+        result = Book.info(args.info)
+        print(result)
+    
+    if args.wordcloud is not None:
+        result = Book.wordcloud(args.wordcloud)
+        print(result)
+    
+    if args.author:
+        result = Book.by_author(args.author)
+        print(result)
+
+    if args.category:
+        result = Book.by_category(args.category)
+        print(result)
+
+    if args.export:
+        result = Book.export_card(args.export)
         print(result)
