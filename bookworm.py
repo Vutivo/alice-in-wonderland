@@ -25,9 +25,19 @@ class GutenbergBook:
     def GutenbergID(id:int):
 
         """
-        Download a book from Project Gutenberg by its ID.
-        Reuses the file if it already exists.
-        Cleans the book using GutenbergBook.CleanFile.
+        Downloads a Project Gutenberg book by its ID and saves it locally.
+        Reuses the cached file if it already exists.
+        Cleans the book content using GutenbergBook.CleanFile.
+
+        Args:
+            id (int): The Gutenberg book ID (must be > 0).
+
+        Returns:
+            str: The local file path of the downloaded book.
+
+        Raises:
+            ValueError: If the book ID is negative.
+            Exception: If the download fails.
         """
         if int(id) < 0:
             raise ValueError(f"Invalid book ID: {id}")
@@ -49,11 +59,19 @@ class GutenbergBook:
                 os.remove(book_name)  
             raise Exception(f"Failed to download catalog: {e}")
 
-    def CleanFile(id, file_path):
+    def CleanFile(id:int, file_path):
         """
-        Remove the Project Gutenberg header and footer from a book file.
-        Keeps only the main text content.
+        Removes the Project Gutenberg header and footer from a book file.
+        Keeps only the main text content between the START and END markers.
         Overwrites the original file with the cleaned text.
+
+        Args:
+            id (int): The Gutenberg book ID (used for error messages).
+            file_path (str): Path to the book file to clean.
+
+        Raises:
+            IOError: If the file cannot be read or written.
+            Exception: If the Gutenberg markers are missing or an unexpected error occurs.
         """
         try:
             line_file = []
@@ -83,6 +101,13 @@ class GutenbergBook:
             raise Exception(f"Unexpected error while cleaning file: {e}")
 
     def Catalog():
+        """
+        Downloads the Project Gutenberg catalog CSV if not already cached.
+        Saves it to cache/pg_catalog.csv.
+
+        Raises:
+            Exception: If the download fails.
+        """
         file_path = "cache/pg_catalog.csv"
         os.makedirs("cache", exist_ok=True)
         try:
@@ -98,7 +123,26 @@ class GutenbergBook:
 
 # ---------------------------------------------------------------------
 class Book:
-    def Summarizer(id):
+    def Summarizer(id:int):
+        """
+        Generates a summary of Project Gutenberg book from its ID
+
+        Scores each sentence using TF-IDF, then selects the top 4
+        while avoiding redundancy (cosine similarity >= 0.7).
+        The result is cached at ./cache/summary/summary{id}.txt.
+
+        Args:
+            id (int): The Gutenberg book ID.
+
+        Returns:
+            str: The 4 most representative sentences joined by a space.
+                Returns an empty list if no valid sentences are found.
+
+        Raises:
+            FileNotFoundError: If the book file is not found.
+            Exception: If the book is empty or an error occurs during processing.
+
+        """
         try:
             summary_path = f"./cache/summary/summary{id}.txt"
             if os.path.exists(summary_path):
@@ -182,7 +226,26 @@ class Book:
         except Exception as e:
             raise Exception(f"Error generating summary: {e}")
 
-    def Similar(id):
+    def Similar(id:int):
+        """
+        Give a five project Gutenberg book with similar from a book id
+
+        Using cosine for create a rank system foreach book in the list: [11,12,16,35,36,55,84,108,113,120,159,164,236,345,834,863,1661,61262,68283,69087,70114]
+
+        The closer the angle is to 1, the more similar the book is to the selected book.
+
+        Args:
+            id (int): The Gutenberg book ID.
+
+        Returns:
+            list[str]: The 5 most similar book titles, ordered by similarity score.
+
+        Raises:
+            FileNotFoundError: If the book file is not found.
+            Exception: If the book is empty or an error occurs during processing.
+
+
+        """
         try:
             list_id = [11,12,16,35,36,55,84,108,113,120,159,164,236,345,834,863,1661,61262,68283,69087,70114]
             list_book = []
@@ -216,13 +279,32 @@ class Book:
                 if len(results) == 5:
                     break
                     
-                return results
+            return results
         except ValueError:
             raise ValueError(f"Book ID {args.similar} is not in the collection.")
         except FileNotFoundError:
             raise FileNotFoundError(f"Error: Book file not found for ID {id}")
 
-    def Lexdiv(id):
+    def Lexdiv(id:int):
+        """
+    Computes lexical diversity metrics for a Project Gutenberg book.
+
+    Args:
+        id (int): The Gutenberg book ID.
+
+    Returns:
+        dict: A dictionary with the following keys:
+            - "tok" (int): Total number of tokens.
+            - "typ" (int): Number of unique words.
+            - "hap" (int): Number of words appearing only once.
+            - "ttr" (float): Type-Token Ratio (unique words / total tokens).
+            - "mwl" (float): Mean word length in characters.
+            - "mwf" (float): Mean word frequency (total tokens / unique words).
+
+    Raises:
+        FileNotFoundError: If the book file is not found.
+        Exception: If the book has no words or an error occurs during processing.
+        """
         try:
             GutenbergBook.GutenbergID(id)
             with open(f"./cache/book/book{id}.txt", "r", encoding='utf-8', errors='ignore') as f:
@@ -251,8 +333,25 @@ class Book:
         except Exception as e:
             raise Exception(f"Error computing lexical diversity: {e}")
 
+    def Topics(id:int):
+        """
+    Extracts the most frequent words per section of a Project Gutenberg book.
 
-    def Topics(id):
+    Splits the book into sections of ~1000 words and returns the top 10
+    most frequent words for each section.
+    The result is cached at ./cache/topics/topics{id}.json.
+
+    Args:
+        id (int): The Gutenberg book ID.
+
+    Returns:
+        dict: A dictionary where each key is a section number (int) and
+              each value is a list of (word, count) tuples for the top 10 words.
+
+    Raises:
+        FileNotFoundError: If the book file is not found.
+        Exception: If an error occurs during processing.
+        """
         try: 
             cache_path = f"./cache/topics/topics{id}.json"
             if os.path.exists(cache_path):
@@ -285,7 +384,25 @@ class Book:
         except Exception as e:
             raise Exception(f"Error extracting topics: {e}")
         
-    def Entities(id):
+    def Entities(id:int):
+        """
+    Extracts named entities (characters and locations) from a Project Gutenberg book using spaCy.
+
+    The result is cached at ./cache/entitie/entitie{id}.json.
+
+    Args:
+        id (int): The Gutenberg book ID.
+
+    Returns:
+        dict: A dictionary with the following keys:
+            - "characters" (list[str]): Person names detected in the text.
+            - "locations" (list[str]): Place names (GPE, LOC) detected in the text.
+
+    Raises:
+        FileNotFoundError: If the book file is not found.
+        OSError: If the spaCy model fails to load.
+        Exception: If an error occurs during processing.
+    """
         try:
             cache_path = f"./cache/entitie/entitie{id}.json"
             if os.path.exists(cache_path):
@@ -327,11 +444,29 @@ class Book:
         except Exception as e:
             raise Exception(f"Error extracting entities: {e}")
 
-    def Info(id):
+    def Info(id:int):
+        """
+        Retrieves metadata for a Project Gutenberg book from the local catalog.
+
+        Reads from cache/pg_catalog.csv to extract book information.
+
+        Args:
+            id (int): The Gutenberg book ID.
+
+        Returns:
+            dict: A dictionary with the following keys:
+                - "id" (str): The book ID.
+                - "authors" (str): The book's author(s).
+                - "bookshelves" (str): The associated bookshelves.
+
+        Raises:
+            FileNotFoundError: If cache/pg_catalog.csv is not found.
+            Exception: If the ID doesn't exist or an error occurs.
+        """
         try:
             df = pd.read_csv("cache/pg_catalog.csv")
             row = df[df["Text#"] == int(id)]
-            if row is None:
+            if row.empty:
                 raise Exception(f"Id {id} doesn't exist")
             result = {
             "id": str(id),
@@ -344,7 +479,25 @@ class Book:
         except Exception as e:
             raise Exception(f"Error retrieving book info: {e}")
 
-    def Card(id):
+    def Card(id:int):
+        """
+        Aggregates all available analyses for a Project Gutenberg book into a single dictionary.
+
+        Calls Info, Lexdiv, Topics, Entities, Summarizer and Similar for the given ID.
+        If a method fails, its value is set to "ERROR" instead of raising an exception.
+
+        Args:
+            id (int): The Gutenberg book ID.
+
+        Returns:
+            dict: A dictionary with the following keys:
+                - "info" (dict): Book metadata.
+                -- "lexdiv" (dict): Lexical diversity metrics.
+                - "topic" (dict): Top 10 words per section.
+                - "entities" (dict): Characters and locations found in the book.
+                - "summary" (str): The 4 most representative sentences.
+                - "similar" (list[str]): The 5 most similar book titles.
+        """
         result = {}
         
         methods = {
