@@ -61,6 +61,15 @@ python bookworm.py --card 11
 ### Named Entity Recognition
 ![Pipeline entities](assets/entities_pipeline.svg)
 
+### Summary
+![Pipeline summary](assets/summarizer_pipeline.svg)
+
+### Similar
+![Pipeline similar](assets/similar_pipeline.svg)
+
+### Card
+![Pipeline card](assets/card_pipeline.svg)
+
 ## Credits
  
 This project was made by [MelioSousLo](https://github.com/MelioSousLo), and [Kenan-LCF](https://github.com/Kenan-LCF).
