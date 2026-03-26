@@ -61,6 +61,19 @@ python bookworm.py --card 11
 ### Named Entity Recognition
 ![Pipeline entities](assets/entities_pipeline.svg)
 
+
+## Bonus réalisés
+
+- [x] retrieve information and download all books [co-]written by a given author;
+- [x] retrieve information and download all books from a specific category
+- [x] fetch book covers to illustrate your book cards
+- [x] generate a word cloud of the most frequent words to illustrate your book cards
+- [ ] compute additional lexical diversity measurements such as: MSTTR, MATTR, MTLD, Evenness, Rarity, Dispersion, Disparity, Guiraud's Index, Herdan's C, Yule's I, Yule's K, Maas's a², Dugast's U²;
+- [ ] compare topic modeling results using LSA and LDA, and choose the best approach
+- [ ] export book cards in a cross-platform and user-friendly format
+- [ ] cluster books using K-Means or hierarchical clustering to group similar texts
+- [ ] build a simple frontend to make your NLP engine interactive
+
 ## Credits
  
 This project was made by [MelioSousLo](https://github.com/MelioSousLo), and [Kenan-LCF](https://github.com/Kenan-LCF).
