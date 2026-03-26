@@ -3,6 +3,10 @@ This project was made for Epitech. The goal is to build a CLI using NLP techniqu
 
 We work with the Project Gutenberg website to download books and their catalog.
 
+
+---
+
+
 ## Contents
 - `bookworm.py` — main CLI script containing all NLP logic
 - `cache/book/` — downloaded and cleaned Gutenberg `.txt` files
@@ -11,6 +15,23 @@ We work with the Project Gutenberg website to download books and their catalog.
 - `cache/topics/` — cached topic results per book ID `.json`
 - `cache/entitie/` — cached entity results per book ID `.json`
 - `requirements.txt` — all Python dependencies
+
+```
+projet/
+
+├── datasets/
+     └── entities_pipeline.svg
+     └── lexdiv_pipeline.svg
+     └── topics_pipeline.svg
+├── .venv/
+├── .gitignore
+├── bookworm.py
+├── README.md
+└── requirements.txt
+
+```
+---
+
 
 ## How to use
 1. Clone the repository.
@@ -39,6 +60,9 @@ python bookworm.py --similar 11
 python bookworm.py --card 11
 ```
 
+---
+
+
 ## CLI Reference
 
  Option | Argument | Description |
@@ -49,6 +73,10 @@ python bookworm.py --card 11
 | `--topics` | `<ID>` | Extract top keywords per section |
 | `--similar` | `<ID>` | Find the 5 most similar books in the corpus |
 | `--card` | `<ID>` | Return a full metadata card combining all of the above |
+
+
+---
+
 
 ## NLP Tasks
 
@@ -62,7 +90,10 @@ python bookworm.py --card 11
 ![Pipeline entities](assets/entities_pipeline.svg)
 
 
-## Bonus réalisés
+---
+
+
+## Bonuses made
 
 - [x] retrieve information and download all books [co-]written by a given author;
 - [x] retrieve information and download all books from a specific category
@@ -73,6 +104,10 @@ python bookworm.py --card 11
 - [ ] export book cards in a cross-platform and user-friendly format
 - [ ] cluster books using K-Means or hierarchical clustering to group similar texts
 - [ ] build a simple frontend to make your NLP engine interactive
+
+
+---
+
 
 ## Credits
  
