@@ -690,17 +690,7 @@ class Book:
 
 
     def export_card(id):
-        """
-        This function allows you to export book cards in a cross-platform and user-friendly format
-
-        Args:
-            id (int): The Gutenberg book ID.
-        
-        Returns:
-            card_{id}.pdf
-        """
         try:
-
             os.makedirs("./cache/exports", exist_ok=True)
             pdf_path = f"./cache/exports/card_{id}.pdf"
             
@@ -709,17 +699,90 @@ class Book:
             styles = getSampleStyleSheet()
             story = []
 
+            def safe_text(text):
+                text = str(text)
+                text = text.replace("\u2018", "'").replace("\u2019", "'") \
+                        .replace("\u201c", '"').replace("\u201d", '"') \
+                        .replace("\u2014", "-").replace("_", " ")
+                return text.encode("latin-1", errors="ignore").decode("latin-1")
+
+            # --- Title & Author ---
             story.append(Paragraph(f"Book #{id}", styles["Title"]))
-            story.append(Paragraph(f"Author: {data.get('info', {}).get('authors', 'N/A')}", styles["Normal"]))
+            info = data.get("info", {})
+            if info != "ERROR":
+                story.append(Paragraph(f"Author: {safe_text(info.get('authors', 'N/A'))}", styles["Normal"]))
+                story.append(Paragraph(f"Bookshelves: {safe_text(info.get('bookshelves', 'N/A'))}", styles["Normal"]))
             story.append(Spacer(1, 12))
-            story.append(Paragraph("Summary", styles["Normal"]))
 
-            raw_summary = " ".join(data.get("summary", [])) if isinstance(data.get("summary"), list) else data.get("summary", "")
-            clean_summary = raw_summary.encode("latin-1", errors="ignore").decode("latin-1")
+            # --- Summary ---
+            story.append(Paragraph("Summary", styles["Heading2"]))
+            summary = data.get("summary", "")
+            if summary != "ERROR":
+                raw = " ".join(summary) if isinstance(summary, list) else summary
+                story.append(Paragraph(safe_text(raw), styles["Normal"]))
+            else:
+                story.append(Paragraph("N/A", styles["Normal"]))
+            story.append(Spacer(1, 12))
 
-            story.append(Paragraph(clean_summary, styles["Normal"]))
+            # --- Lexical Diversity ---
+            story.append(Paragraph("Lexical Diversity", styles["Heading2"]))
+            lexdiv = data.get("lexdiv", {})
+            if lexdiv != "ERROR":
+                story.append(Paragraph(f"Tokens: {lexdiv.get('tok', 'N/A')}", styles["Normal"]))
+                story.append(Paragraph(f"Types (unique words): {lexdiv.get('typ', 'N/A')}", styles["Normal"]))
+                story.append(Paragraph(f"Hapaxes: {lexdiv.get('hap', 'N/A')}", styles["Normal"]))
+                story.append(Paragraph(f"Type-Token Ratio: {round(lexdiv.get('ttr', 0), 4)}", styles["Normal"]))
+                story.append(Paragraph(f"Mean Word Length: {round(lexdiv.get('mwl', 0), 4)}", styles["Normal"]))
+                story.append(Paragraph(f"Mean Word Frequency: {round(lexdiv.get('mwf', 0), 4)}", styles["Normal"]))
+            else:
+                story.append(Paragraph("N/A", styles["Normal"]))
+            story.append(Spacer(1, 12))
+
+            # --- Entities ---
+            story.append(Paragraph("Entities", styles["Heading2"]))
+            entities = data.get("entities", {})
+            if entities != "ERROR":
+                characters = ", ".join(entities.get("characters", []))
+                locations = ", ".join(entities.get("locations", []))
+                story.append(Paragraph(f"Characters: {safe_text(characters) or 'N/A'}", styles["Normal"]))
+                story.append(Paragraph(f"Locations: {safe_text(locations) or 'N/A'}", styles["Normal"]))
+            else:
+                story.append(Paragraph("N/A", styles["Normal"]))
+            story.append(Spacer(1, 12))
+
+            # --- Similar Books ---
+            story.append(Paragraph("Similar Books", styles["Heading2"]))
+            similar = data.get("similar", [])
+            if similar != "ERROR":
+                for title in similar:
+                    story.append(Paragraph(f"- {safe_text(title)}", styles["Normal"]))
+            else:
+                story.append(Paragraph("N/A", styles["Normal"]))
+            story.append(Spacer(1, 12))
+
+            # --- Topics (first 5 sections only to keep it readable) ---
+            story.append(Paragraph("Topics (top words per section)", styles["Heading2"]))
+            topics = data.get("topic", {})
+            if topics != "ERROR":
+                for section, words in list(topics.items())[:5]:
+                    top_words = ", ".join([w[0] for w in words])
+                    story.append(Paragraph(f"Section {section}: {safe_text(top_words)}", styles["Normal"]))
+            else:
+                story.append(Paragraph("N/A", styles["Normal"]))
+            story.append(Spacer(1, 12))
+
+            # --- Word Cloud image ---
+            story.append(Paragraph("Word Cloud", styles["Heading2"]))
+            wordcloud_path = data.get("wordcloud")
+            if wordcloud_path and wordcloud_path != "ERROR" and os.path.exists(wordcloud_path):
+                from reportlab.platypus import Image
+                story.append(Image(wordcloud_path, width=400, height=200))
+            else:
+                story.append(Paragraph("N/A", styles["Normal"]))
+
             doc.build(story)
-        
+            return pdf_path
+
         except Exception as e:
             print(f"Error exporting card: {e}")
             return None
