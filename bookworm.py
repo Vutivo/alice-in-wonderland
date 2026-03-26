@@ -521,6 +521,7 @@ class Book:
             "entities": Book.Entities,
             "summary": Book.Summarizer,
             "similar": Book.Similar,
+            "wordcloud"
         }
         
         for key, func in methods.items():
@@ -534,6 +535,9 @@ class Book:
     
     
     def wordcloud(id):
+        """
+
+        """
         try:
             cache_path = f"./cache/wordcloud_{id}.png"
 
@@ -674,23 +678,6 @@ class Book:
         except Exception as e:
             print(f"Error exporting card: {e}")
             return None
-
-    def card(id):
-        try:
-            result = {
-            "info": Book.info(id),
-            "lexdiv": Book.lexdiv(id),
-            "topics": Book.topics(id),
-            "entities": Book.entities(id),
-            "summary": Book.summarizer(id),
-            "similar": Book.similar(id),
-            "wordcloud": Book.wordcloud(id),
-        }
-            return result
-        
-        except Exception as e:
-            print(f"Error creating book card: {e}")
-            return {}
         
 
 if __name__ == "__main__":
