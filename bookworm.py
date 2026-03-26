@@ -15,6 +15,9 @@ from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from wordcloud import WordCloud, STOPWORDS
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 warnings.filterwarnings("ignore")
 
@@ -427,6 +430,7 @@ class Book:
 
     def by_category(category_name):
         try:
+            
             df = pd.read_csv("pg_catalog.csv")
             mask = df["Bookshelves"].str.contains(category_name, case=False, na=False)
             matches = df[mask]
@@ -439,14 +443,39 @@ class Book:
                 path = GutenbergBook.GutenbergID(book_id)
                 results.append({"id": book_id, "title": row["Title"], "path": path})
             return results
+        
         except FileNotFoundError:
             print("Error: pg_catalog.csv not found")
             return []
+        
         except Exception as e:
             print(f"Error searching by category: {e}")
             return []
 
 
+    def export_card(id):
+        try:
+
+            os.makedirs("./cache/exports", exist_ok=True)
+            pdf_path = f"./cache/exports/card_{id}.pdf"
+            
+            data = Book.card(id)
+            doc = SimpleDocTemplate(pdf_path, pagesize=A4)
+            styles = getSampleStyleSheet()
+            story = []
+
+            story.append(Paragraph(f"Book #{id}", styles["Title"]))
+            story.append(Paragraph(f"Author: {data.get('info', {}).get('authors', 'N/A')}", styles["Normal"]))
+            story.append(Spacer(1, 12))
+            story.append(Paragraph("Summary", styles["Heading2"]))
+            story.append(Paragraph(" ".join(data.get("summary", [])), styles["Normal"]))
+
+            doc.build(story)
+            return pdf_path
+        
+        except Exception as e:
+            print(f"Error exporting card: {e}")
+            return None
 
     def card(id):
         try:
@@ -460,9 +489,12 @@ class Book:
             "wordcloud": Book.wordcloud(id),
         }
             return result
+        
         except Exception as e:
             print(f"Error creating book card: {e}")
             return {}
+        
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CLI argumets")
 
@@ -481,6 +513,7 @@ if __name__ == "__main__":
     group.add_argument("--wordcloud", type=int)
     group.add_argument("--author", type=str)
     group.add_argument("--category", type=str)
+    group.add_argument("--export", type=int)
 
 # ---------------------------------------------------------------------
 #                           NPL Definitions
@@ -523,8 +556,12 @@ if __name__ == "__main__":
     
     if args.author:
         result = Book.by_author(args.author)
-        print(f"Books by author '{args.author}':")
+        print(result)
 
     if args.category:
         result = Book.by_category(args.category)
-        print(f"Books in category '{args.category}':")
+        print(result)
+
+    if args.export:
+        result = Book.export_card(args.export)
+        print(result)

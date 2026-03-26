@@ -7,3 +7,4 @@ sumy==0.11.0
 nltk==3.9.1
 numpy
 wordcloud
+reportlab
