@@ -521,6 +521,7 @@ class Book:
             "entities": Book.Entities,
             "summary": Book.Summarizer,
             "similar": Book.Similar,
+            "wordcloud": Book.wordcloud,
         }
         
         for key, func in methods.items():
@@ -535,7 +536,14 @@ class Book:
     
     def wordcloud(id):
         """
+        This function allows you to generate a wordcloud. The more often the word appears in the book, 
+        the more prominent it will be on the word cloud
 
+        Args:
+            id (int): The Gutenberg book ID.
+
+        Returns:
+           wordcloud_{id}.png 
         """
         try:
             cache_path = f"./cache/wordcloud_{id}.png"
@@ -563,6 +571,15 @@ class Book:
 
 
     def cover(id):
+        """
+        This function make a request on the net to get the cover of the asked book.
+
+        Args:
+            id (int): The Gutenberg book ID.
+        
+        Returns:
+            cover_{id}.jpg
+        """
         try:
             cache_path = f"./cache/cover_{id}.jpg"
             if os.path.exists(cache_path):
@@ -606,7 +623,16 @@ class Book:
 
 
 
-    def by_author(author_name):
+    def by_author(author_name:str):
+        """
+        Allows you to download all book who are written or co-written by this author
+
+        Args:
+            authors_name (str)
+        
+        Return:
+            All book
+        """
         try:
             df = pd.read_csv("pg_catalog.csv")
             mask = df["Authors"].str.contains(author_name, case=False, na=False) # Allows you to search for an author even if you don't write the name exactly : case = case insensitive, na = False to ignore NaN values
@@ -630,6 +656,15 @@ class Book:
 
 
     def by_category(category_name):
+        """
+        Allows you to download all book who corresponding to the category
+
+        Args:
+            category_name (str)
+        
+        Return:
+            All book
+        """
         try:
             
             df = pd.read_csv("pg_catalog.csv")
@@ -655,12 +690,21 @@ class Book:
 
 
     def export_card(id):
+        """
+        This function allows you to export book cards in a cross-platform and user-friendly format
+
+        Args:
+            id (int): The Gutenberg book ID.
+        
+        Returns:
+            card_{id}.pdf
+        """
         try:
 
             os.makedirs("./cache/exports", exist_ok=True)
             pdf_path = f"./cache/exports/card_{id}.pdf"
             
-            data = Book.card(id)
+            data = Book.Card(id)
             doc = SimpleDocTemplate(pdf_path, pagesize=A4)
             styles = getSampleStyleSheet()
             story = []
@@ -668,11 +712,13 @@ class Book:
             story.append(Paragraph(f"Book #{id}", styles["Title"]))
             story.append(Paragraph(f"Author: {data.get('info', {}).get('authors', 'N/A')}", styles["Normal"]))
             story.append(Spacer(1, 12))
-            story.append(Paragraph("Summary", styles["Heading2"]))
-            story.append(Paragraph(" ".join(data.get("summary", [])), styles["Normal"]))
+            story.append(Paragraph("Summary", styles["Normal"]))
 
+            raw_summary = " ".join(data.get("summary", [])) if isinstance(data.get("summary"), list) else data.get("summary", "")
+            clean_summary = raw_summary.encode("latin-1", errors="ignore").decode("latin-1")
+
+            story.append(Paragraph(clean_summary, styles["Normal"]))
             doc.build(story)
-            return pdf_path
         
         except Exception as e:
             print(f"Error exporting card: {e}")
