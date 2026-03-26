@@ -343,7 +343,7 @@ class Book:
             with open(f"./cache/book/book{id}.txt", "r", encoding='utf-8') as f:
                 text = f.read()
 
-            wc = WordCloud(width=800, height=400, stopwords=STOPWORDS).generate(text) # on import un jeu de mots à ignorer pour le wordcloud "STOPWORDS"
+            wc = WordCloud(width=800, height=400, stopwords=STOPWORDS).generate(text) # We import a set of words to ignore for the wordcloud "STOPWORDS"
             wc.to_file(cache_path)
             return cache_path
         except FileNotFoundError:
@@ -402,6 +402,52 @@ class Book:
 
 
 
+    def by_author(author_name):
+        try:
+            df = pd.read_csv("pg_catalog.csv")
+            mask = df["Authors"].str.contains(author_name, case=False, na=False) # Allows you to search for an author even if you don't write the name exactly : case = case insensitive, na = False to ignore NaN values
+            matches = df[mask]
+            if matches.empty:
+                print(f"No books found for author: {author_name}")
+                return []
+            results = []
+            for _, row in matches.iterrows(): # iterrows() return 2 things eachj time : the index and the row itself, we use _ for the index because we don't need it (convention in PYTHON)
+                book_id = row["Text#"]
+                path = GutenbergBook.GutenbergID(book_id)
+                results.append({"id": book_id, "title": row["Title"], "path": path})
+            return results
+        except FileNotFoundError:
+            print("Error: pg_catalog.csv not found")
+            return []
+        except Exception as e:
+            print(f"Error searching by author: {e}")
+            return []
+
+
+
+    def by_category(category_name):
+        try:
+            df = pd.read_csv("pg_catalog.csv")
+            mask = df["Bookshelves"].str.contains(category_name, case=False, na=False)
+            matches = df[mask]
+            if matches.empty:
+                print(f"No books found for category: {category_name}")
+                return []
+            results = []
+            for _, row in matches.iterrows():
+                book_id = row["Text#"]
+                path = GutenbergBook.GutenbergID(book_id)
+                results.append({"id": book_id, "title": row["Title"], "path": path})
+            return results
+        except FileNotFoundError:
+            print("Error: pg_catalog.csv not found")
+            return []
+        except Exception as e:
+            print(f"Error searching by category: {e}")
+            return []
+
+
+
     def card(id):
         try:
             result = {
@@ -433,6 +479,8 @@ if __name__ == "__main__":
     group.add_argument("--card", type=int)
     group.add_argument("--info", type=int)
     group.add_argument("--wordcloud", type=int)
+    group.add_argument("--author", type=str)
+    group.add_argument("--category", type=str)
 
 # ---------------------------------------------------------------------
 #                           NPL Definitions
@@ -472,3 +520,11 @@ if __name__ == "__main__":
     if args.wordcloud is not None:
         result = Book.wordcloud(args.wordcloud)
         print(result)
+    
+    if args.author:
+        result = Book.by_author(args.author)
+        print(f"Books by author '{args.author}':")
+
+    if args.category:
+        result = Book.by_category(args.category)
+        print(f"Books in category '{args.category}':")
