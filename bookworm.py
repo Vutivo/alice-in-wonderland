@@ -521,7 +521,6 @@ class Book:
             "entities": Book.Entities,
             "summary": Book.Summarizer,
             "similar": Book.Similar,
-            "wordcloud"
         }
         
         for key, func in methods.items():
@@ -695,7 +694,6 @@ if __name__ == "__main__":
     group.add_argument("--topics", type= int)
     group.add_argument("--similar", type=int)
     group.add_argument("--card", type=int)
-    group.add_argument("--info", type=int)
     group.add_argument("--wordcloud", type=int)
     group.add_argument("--author", type=str)
     group.add_argument("--category", type=str)
@@ -728,11 +726,7 @@ if __name__ == "__main__":
         print(result)
 
     if args.card:
-        result = Book.card(args.card)
-        print(result)
-    
-    if args.info:   
-        result = Book.info(args.info)
+        result = Book.Card(args.card)
         print(result)
     
     if args.wordcloud is not None:

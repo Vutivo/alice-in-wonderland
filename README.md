@@ -112,7 +112,7 @@ python bookworm.py --card <ID>
 - [x] generate a word cloud of the most frequent words to illustrate your book cards
 - [ ] compute additional lexical diversity measurements such as: MSTTR, MATTR, MTLD, Evenness, Rarity, Dispersion, Disparity, Guiraud's Index, Herdan's C, Yule's I, Yule's K, Maas's a², Dugast's U²;
 - [ ] compare topic modeling results using LSA and LDA, and choose the best approach
-- [ ] export book cards in a cross-platform and user-friendly format
+- [x] export book cards in a cross-platform and user-friendly format
 - [ ] cluster books using K-Means or hierarchical clustering to group similar texts
 - [ ] build a simple frontend to make your NLP engine interactive
 
