@@ -62,9 +62,7 @@ class GutenbergBook:
         except urllib.error.URLError as e:
             print(f"Failed to download book: {e}")
             return None
-        except urllib.error.HTTPError as e:
-            print(f"Failed to download book: {e}")
-            return None
+
         except Exception as e:
             print(f"Unexpected error downloading book: {e}")
             return None
@@ -213,78 +211,69 @@ class Book:
 
 
     def summarizer(id):
-        try:
-            file_path = f"./cache/book/book{id}.txt"
+        file_path = f"./cache/book/book{id}.txt"
 
-            if not os.path.exists(file_path):
-                GutenbergBook.GutenbergID(id)
+        if not os.path.exists(file_path):
+            GutenbergBook.GutenbergID(id)
 
-            with open(file_path, 'r', encoding='utf-8') as f:
-                text = f.read()
+        with open(file_path, 'r', encoding='utf-8') as f:
+            text = f.read()
 
-            sentences = re.split(r'(?<=[.!?])\s+|\.{3}\s*', text)
+        sentences = re.split(r'(?<=[.!?])\s+|\.{3}\s*', text)
 
-            cleaned_sentences = []
+        cleaned_sentences = []
 
-            for sentence in sentences:
-                sentence = sentence.replace("[Illustration]", "").strip()
-                if not sentence:
-                    continue
-                if not re.search(r'[.!?]$', sentence):
-                    continue
-                cleaned_sentences.append(sentence)
+        for sentence in sentences:
+            sentence = sentence.replace("[Illustration]", "").strip()
+            if not sentence:
+                continue
+            if not re.search(r'[.!?]$', sentence):
+                continue
+            cleaned_sentences.append(sentence)
 
-            filtered_sentences = []
+        filtered_sentences = []
 
-            for sentence in cleaned_sentences:
-                words = sentence.split()
-                if 5 < len(words) < 25 and not (sentence.strip().startswith('"') or sentence.strip().startswith("'") or sentence.strip().startswith('"')):
-                    filtered_sentences.append(sentence)
+        for sentence in cleaned_sentences:
+            words = sentence.split()
+            if 5 < len(words) < 25 and not (sentence.strip().startswith('"') or sentence.strip().startswith("'") or sentence.strip().startswith("“")):
+                filtered_sentences.append(sentence)
 
-            if len(filtered_sentences) == 0:
-                return []
+        if len(filtered_sentences) == 0:
+            return []
 
-            vectorizer = TfidfVectorizer(stop_words="english")
-            X = vectorizer.fit_transform(filtered_sentences)
+        vectorizer = TfidfVectorizer(stop_words="english")
+        X = vectorizer.fit_transform(filtered_sentences)
 
-            scores = []
-            for i in range(X.shape[0]):
-                score = X[i].mean()
-                scores.append(score)
-            scores = np.array(scores).flatten()
+        scores = []
+        for i in range(X.shape[0]):
+            score = X[i].mean()
+            scores.append(score)
+        scores = np.array(scores).flatten()
 
-            sim_matrix = cosine_similarity(X)
+        sim_matrix = cosine_similarity(X)
 
-            selected = []
-            ranked_indices = scores.argsort()[::-1]  
-            line = 3
-            for idx in ranked_indices:
-                if len(selected) >= line:
+        selected = []
+        ranked_indices = scores.argsort()[::-1]  
+        line = 3
+        for idx in ranked_indices:
+            if len(selected) >= line:
+                break
+
+            too_similar = False
+            for i in selected:
+                if sim_matrix[idx][i] >= 0.7:
+                    too_similar = True
                     break
 
-                too_similar = False
-                for i in selected:
-                    if sim_matrix[idx][i] >= 0.7:
-                        too_similar = True
-                        break
+            if not too_similar:
+                selected.append(idx)
 
-                if not too_similar:
-                    selected.append(idx)
+        selected.sort()
 
-            selected.sort()
-
-            summary = []
-            for i in selected:
-                summary.append(filtered_sentences[i])
-
-            return summary
-        except FileNotFoundError:
-            print(f"Error: Book file not found for ID {id}")
-            return []
-        except Exception as e:
-            print(f"Error generating summary: {e}")
-            return []
-    
+        summary = []
+        for i in selected:
+            summary.append(filtered_sentences[i])
+        return summary
     
     
     def similar(id):
