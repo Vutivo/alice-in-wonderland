@@ -807,7 +807,8 @@ if __name__ == "__main__":
     group.add_argument("--author", type=str)
     group.add_argument("--category", type=str)
     group.add_argument("--export", type=int)
-
+    group.add_argument("--cover", type=int)
+    
 # ---------------------------------------------------------------------
 #                           NPL Definitions
 # ---------------------------------------------------------------------
@@ -853,3 +854,7 @@ if __name__ == "__main__":
     if args.export:
         result = Book.export_card(args.export)
         print(result)
+
+    if args.cover:
+        result = Book.cover(args.cover)
+        print(result)    
